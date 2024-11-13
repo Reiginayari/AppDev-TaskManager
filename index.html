@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <aside class="sidebar">
+            <input type="text" placeholder="Search tasks" class="search-bar">
+            <nav class="nav-links">
+                <button id="important-tasks" class="nav-link">Important Tasks</button>
+                <button id="assigned-to-me" class="nav-link">Assigned to Me</button>
+                <button id="today-tasks" class="nav-link">Today's Tasks</button>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h1 id="section-title">Tasks</h1>
+            </header>
+            <section class="task-list">
+                <div class="task" data-id="1">
+                    <p class="task-title">Task Title</p>
+                    <button class="view-details">View Details</button>
+                </div>
+            </section>
+        </main>
+
+        <div id="task-details" class="modal hidden">
+            <div class="modal-content">
+                <button class="close-modal">Close</button>
+                <h2>Task Details</h2>
+                <p>Details about this task...</p>
+                <h3>Collaborators:</h3>
+                <ul id="collaborators-list">
+
+                </ul>
+                <button class="add-collaborator">Invite</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
