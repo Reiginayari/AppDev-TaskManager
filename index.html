@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task manager</title>
+    <title>Task Manager</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -14,8 +14,10 @@
                 <button id="important-tasks" class="nav-link">Important Tasks</button>
                 <button id="assigned-to-me" class="nav-link">Assigned to Me</button>
                 <button id="today-tasks" class="nav-link">Today's Tasks</button>
-                <button id="Add-list" class="nav-link">Add List</button> <!--need to be put at the bottom of the sidebar-->
             </nav>
+            <div class="add-list-container">
+                <button id="add-list" class="add-list-button">+ New List</button>
+            </div>
         </aside>
 
         <main class="main-content">
@@ -29,16 +31,14 @@
                 </div>
             </section>
         </main>
-        <!--Need div for Add Task at the bottom-->
-        <div id="task-details" class="modal hidden">
+
+        <div id="task-details" class="modal hidden" aria-hidden="true">
             <div class="modal-content">
                 <button class="close-modal">Close</button>
                 <h2>Task Details</h2>
                 <p>Details about this task...</p>
                 <h3>Collaborators:</h3>
-                <ul id="collaborators-list">
-
-                </ul>
+                <ul id="collaborators-list"></ul>
                 <button class="add-collaborator">Invite</button>
             </div>
         </div>
