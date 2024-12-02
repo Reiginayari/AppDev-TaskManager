@@ -23,23 +23,58 @@
         <main class="main-content">
             <header class="content-header">
                 <h1 id="section-title">Tasks</h1>
-            </header>
-            <section class="task-list">
-                <div class="task" data-id="1">
-                    <p class="task-title">Task Title</p>
-                    <button class="view-details">View Details</button>
+                <div class="filters">
+                    <label for="filter-priority">Priority:</label>
+                    <select id="filter-priority">
+                        <option value="all">All</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
                 </div>
+            </header>
+            <section class="task-list" id="task-list">
             </section>
         </main>
 
-        <div id="task-details" class="modal hidden" aria-hidden="true">
+        <div id="add-task-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Create New Task</h2>
+                <form id="add-task-form">
+                    <label for="task-title">Task Title:</label>
+                    <input type="text" id="task-title" required>
+
+                    <label for="task-assignee">Assign to:</label>
+                    <select id="task-assignee">
+                        <option value="User 1">User 1</option>
+                        <option value="User 2">User 2</option>
+                    </select>
+
+                    <label for="task-due-date">Due Date:</label>
+                    <input type="date" id="task-due-date" required>
+
+                    <label for="task-priority">Priority:</label>
+                    <select id="task-priority">
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+
+                    <button type="submit">Add Task</button>
+                    <button type="button" class="close-modal">Cancel</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="task-details-modal" class="modal hidden">
             <div class="modal-content">
                 <button class="close-modal">Close</button>
-                <h2>Task Details</h2>
-                <p>Details about this task...</p>
-                <h3>Collaborators:</h3>
-                <ul id="collaborators-list"></ul>
-                <button class="add-collaborator">Invite</button>
+                <h2 id="task-details-title">Task Details</h2>
+                <p id="task-details-info"></p>
+                <h3>Comments</h3>
+                <ul id="comment-list"></ul>
+                <textarea id="new-comment" placeholder="Add a comment..."></textarea>
+                <button id="add-comment">Add Comment</button>
             </div>
         </div>
     </div>
