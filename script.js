@@ -44,7 +44,7 @@ function viewTaskDetails(index) {
         const comment = document.getElementById('new-comment').value;
         if (comment) {
             task.comments.push(comment);
-            viewTaskDetails(index); // Re-render task details
+            viewTaskDetails(index); 
         }
     };
 }
