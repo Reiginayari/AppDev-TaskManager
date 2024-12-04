@@ -22,7 +22,8 @@ const taskSchema = new mongoose.Schema({
         type: Date
     },
     assignedTo: {
-        type: String
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     },
     createdAt: {
         type: Date,

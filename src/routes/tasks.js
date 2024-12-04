@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Task = require('../models/Task');
+const authMiddleware = require('../middleware/auth');
+
+// Apply middleware to all routes
+router.use(authMiddleware);
 
 // Get all tasks
 router.get('/', async (req, res) => {

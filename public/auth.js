@@ -68,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (response.ok) {
                 localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
                 window.location.href = '/app';
             } else {
                 alert(data.message || 'Login failed');

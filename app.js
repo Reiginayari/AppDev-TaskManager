@@ -14,9 +14,11 @@ app.use(bodyParser.json());
 // Routes
 const taskRoutes = require('./src/routes/tasks');
 const authRoutes = require('./src/routes/auth');
+const userRoutes = require('./src/routes/users');
 
 app.use('/api/tasks', taskRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 
 // Serve login page as landing page
 app.get('/', (req, res) => {
