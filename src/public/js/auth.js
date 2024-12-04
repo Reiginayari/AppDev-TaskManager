@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Tab switching
     const tabs = document.querySelectorAll('.auth-tab');
     const forms = document.querySelectorAll('.auth-form');
 
@@ -14,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Register form submission
     document.getElementById('register-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = {
@@ -36,7 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (response.ok) {
                 alert(data.message);
-                // Switch to login tab
                 document.querySelector('[data-form="login"]').click();
             } else {
                 alert(data.message || 'Registration failed');
@@ -47,7 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Login form submission
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = {
@@ -78,4 +74,4 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Login failed');
         }
     });
-}); 
+});

@@ -1,42 +1,40 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
+const expressLayouts = require('express-ejs-layouts');
+const connectDB = require('./src/config/db');
 require('dotenv').config();
 
 const app = express();
 
+// View engine setup
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'src/views'));
+app.set('layout', 'layout');
+app.use(expressLayouts);
+
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'src/public')));
 
 // Routes
-const taskRoutes = require('./src/routes/tasks');
-const authRoutes = require('./src/routes/auth');
-const userRoutes = require('./src/routes/users');
+app.use('/api/tasks', require('./src/routes/tasks'));
+app.use('/api/auth', require('./src/routes/auth'));
+app.use('/api/users', require('./src/routes/users'));
 
-app.use('/api/tasks', taskRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-
-// Serve login page as landing page
+// View routes
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+    res.render('auth/login', { title: 'Login' });
 });
 
-// Serve main app page after login
 app.get('/app', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.render('tasks/index', { title: 'Task Manager' });
 });
 
-// Serve static files AFTER route definitions
-app.use(express.static('public'));
-
-// Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/taskmanager')
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('MongoDB connection error:', err));
+// Connect to database
+connectDB();
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

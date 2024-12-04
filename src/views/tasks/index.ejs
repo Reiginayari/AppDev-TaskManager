@@ -1,0 +1,51 @@
+<div id="app">
+    <aside class="sidebar">
+        <div class="user-profile">
+            <span id="user-name"></span>
+            <button id="logout-btn">Logout</button>
+        </div>
+        <input type="text" placeholder="Search tasks" class="search-bar">
+        <nav class="nav-links">
+            <button id="important-tasks" class="nav-link">Important Tasks</button>
+            <button id="assigned-to-me" class="nav-link">Assigned to Me</button>
+            <button id="today-tasks" class="nav-link">Today's Tasks</button>
+        </nav>
+        <div class="add-list-container">
+            <button id="add-task" class="add-list-button">+ New Task</button>
+            <button id="manage-cotaskers" class="add-list-button">Manage Co-taskers</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="content-header">
+            <h1 id="section-title">Tasks</h1>
+            <div class="filters">
+                <label for="filter-priority">Priority:</label>
+                <select id="filter-priority">
+                    <option value="all">All</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
+        </header>
+        <div id="task-list" class="task-list"></div>
+    </main>
+</div>
+
+<div id="task-modal" class="modal">
+    <div class="modal-content">
+        <h2>Create New Task</h2>
+        <form id="task-form">
+            <input type="text" name="title" placeholder="Task Title" required>
+            <textarea name="description" placeholder="Description" required></textarea>
+            <select name="priority" required>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+            </select>
+            <button type="submit">Create Task</button>
+            <button type="button" class="close-modal">Cancel</button>
+        </form>
+    </div>
+</div>
