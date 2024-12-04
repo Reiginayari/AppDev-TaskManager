@@ -44,8 +44,25 @@
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
             </select>
+            <div class="assign-cotaskers">
+                <label>Assign to Co-taskers:</label>
+                <div id="task-cotaskers" class="task-cotaskers"></div>
+            </div>
             <button type="submit">Create Task</button>
             <button type="button" class="close-modal">Cancel</button>
         </form>
+    </div>
+</div>
+
+<div id="cotasker-modal" class="modal">
+    <div class="modal-content">
+        <h2>Manage Co-taskers</h2>
+        <div class="search-container">
+            <input type="text" id="cotasker-search" placeholder="Search by email">
+        </div>
+        <div id="search-results" class="search-results"></div>
+        <h3>Your Co-taskers</h3>
+        <div id="co-tasker-list" class="co-tasker-list"></div>
+        <button type="button" class="close-modal">Close</button>
     </div>
 </div>

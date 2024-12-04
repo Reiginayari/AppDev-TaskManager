@@ -16,6 +16,10 @@ async function handleTaskSubmit(e) {
     const form = e.target;
     const token = localStorage.getItem('token');
 
+    // Get selected co-taskers
+    const selectedCoTaskers = Array.from(form.querySelectorAll('input[name="assignedTo"]:checked'))
+        .map(checkbox => checkbox.value);
+
     try {
         const response = await fetch('/api/tasks', {
             method: 'POST',
@@ -26,7 +30,8 @@ async function handleTaskSubmit(e) {
             body: JSON.stringify({
                 title: form.title.value,
                 description: form.description.value,
-                priority: form.priority.value
+                priority: form.priority.value,
+                assignedTo: selectedCoTaskers
             })
         });
 
@@ -49,20 +54,52 @@ function createTaskElement(task) {
             <h3>${task.title}</h3>
             <p>${task.description}</p>
             <span class="priority ${task.priority}">${task.priority}</span>
+            ${task.assignedTo && task.assignedTo.length > 0 ? `
+                <div class="task-assigned">
+                    <small>Assigned to: ${task.assignedTo.map(user => user.name).join(', ')}</small>
+                </div>
+            ` : ''}
         </div>
         <div class="task-actions">
             <button class="edit-task" data-id="${task._id}">Edit</button>
             <button class="delete-task" data-id="${task._id}">Delete</button>
         </div>
     `;
+
+    // Add event listener for delete button
+    const deleteButton = div.querySelector('.delete-task');
+    deleteButton.addEventListener('click', async () => {
+        if (confirm('Are you sure you want to delete this task?')) {
+            try {
+                const response = await fetch(`/api/tasks/${task._id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    div.remove(); // Remove the task element from the DOM
+                } else {
+                    const data = await response.json();
+                    alert(data.message || 'Failed to delete task');
+                }
+            } catch (error) {
+                console.error('Error deleting task:', error);
+                alert('Failed to delete task');
+            }
+        }
+    });
+
     return div;
 }
 
 function setupEventListeners() {
     const modal = document.getElementById('task-modal');
     
-    document.getElementById('add-task').addEventListener('click', () => {
+    document.getElementById('add-task').addEventListener('click', async () => {
         modal.classList.add('visible');
+        await loadCoTaskers();
     });
 
     document.querySelector('.close-modal').addEventListener('click', () => {
@@ -95,6 +132,31 @@ function displayTasks(tasks) {
         const taskElement = createTaskElement(task);
         taskList.appendChild(taskElement);
     });
+}
+
+async function loadCoTaskers() {
+    const token = localStorage.getItem('token');
+    try {
+        const response = await fetch('/api/users/coTaskers', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const coTaskers = await response.json();
+        updateTaskCoTaskersList(coTaskers);
+    } catch (error) {
+        console.error('Error loading co-taskers:', error);
+    }
+}
+
+function updateTaskCoTaskersList(coTaskers) {
+    const taskCoTaskers = document.getElementById('task-cotaskers');
+    if (taskCoTaskers) {
+        taskCoTaskers.innerHTML = coTaskers.map(coTasker => `
+            <div class="cotasker-checkbox">
+                <input type="checkbox" name="assignedTo" value="${coTasker._id}" id="cotasker-${coTasker._id}">
+                <label for="cotasker-${coTasker._id}">${coTasker.name}</label>
+            </div>
+        `).join('');
+    }
 }
 
 // ... Add more helper functions for task operations
