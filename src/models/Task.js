@@ -1,5 +1,18 @@
 const mongoose = require('mongoose');
 
+const taskUserStatusSchema = new mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'in-progress', 'completed'],
+        default: 'pending'
+    }
+}, { _id: false });
+
 const taskSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -9,10 +22,8 @@ const taskSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
-    status: {
-        type: String,
-        enum: ['pending', 'in-progress', 'completed'],
-        default: 'pending'
+    dueDate: {
+        type: Date
     },
     important: {
         type: Boolean,
@@ -23,9 +34,7 @@ const taskSchema = new mongoose.Schema({
         enum: ['high', 'medium', 'low'],
         default: 'medium'
     },
-    dueDate: {
-        type: Date
-    },
+    userStatuses: [taskUserStatusSchema],
     assignedTo: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
@@ -40,5 +49,12 @@ const taskSchema = new mongoose.Schema({
         default: Date.now
     }
 });
+
+// Calculate completion percentage
+taskSchema.methods.getCompletionPercentage = function() {
+    if (!this.userStatuses || this.userStatuses.length === 0) return 0;
+    const completedCount = this.userStatuses.filter(status => status.status === 'completed').length;
+    return Math.round((completedCount / this.userStatuses.length) * 100);
+};
 
 module.exports = mongoose.model('Task', taskSchema);
