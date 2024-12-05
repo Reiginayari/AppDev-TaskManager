@@ -23,27 +23,44 @@ document.addEventListener('DOMContentLoaded', () => {
     let searchTimeout;
     searchInput.addEventListener('input', (e) => {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => searchUsers(e.target.value), 300);
+        const searchTerm = e.target.value.trim();
+        searchTimeout = setTimeout(() => {
+            if (searchTerm.length >= 2) {
+                searchUsers(searchTerm);
+            } else {
+                searchResults.innerHTML = '';
+            }
+        }, 300);
     });
 
     async function searchUsers(email) {
-        if (!email) {
-            searchResults.innerHTML = '';
-            return;
-        }
-
         try {
-            const response = await fetch(`/api/users/search?email=${email}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+            const response = await fetch(`/api/users/search?email=${encodeURIComponent(email)}`, {
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
             });
+
+            if (!response.ok) {
+                throw new Error('Search failed');
+            }
+
             const users = await response.json();
+            console.log('Search results:', users);
             displaySearchResults(users);
         } catch (error) {
             console.error('Error searching users:', error);
+            searchResults.innerHTML = '<div class="error">Error searching users</div>';
         }
     }
 
     function displaySearchResults(users) {
+        if (!users || users.length === 0) {
+            searchResults.innerHTML = '<div class="no-results">No users found</div>';
+            return;
+        }
+
         searchResults.innerHTML = users.map(user => `
             <div class="user-result">
                 <span>${user.name} (${user.email})</span>
@@ -51,11 +68,14 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `).join('');
 
-        searchResults.querySelectorAll('.add-cotasker').forEach(button => {
+        const addButtons = searchResults.querySelectorAll('.add-cotasker');
+        addButtons.forEach(button => {
             button.addEventListener('click', async (e) => {
                 e.preventDefault();
                 const userId = button.dataset.userid;
-                console.log(`Attempting to add co-tasker with ID: ${userId}`);
+                button.disabled = true;
+                button.textContent = 'Adding...';
+
                 try {
                     const response = await fetch('/api/users/coTaskers', {
                         method: 'POST',
@@ -66,18 +86,39 @@ document.addEventListener('DOMContentLoaded', () => {
                         body: JSON.stringify({ userId })
                     });
 
-                    if (response.ok) {
-                        const result = await response.json();
-                        console.log('Co-tasker added successfully:', result);
-                        displayCoTaskers(result.coTaskers);
-                        updateTaskCoTaskersList(result.coTaskers);
-                        searchInput.value = '';
-                        searchResults.innerHTML = '';
-                    } else {
-                        console.error('Failed to add co-tasker:', await response.text());
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.message || 'Failed to add co-tasker');
                     }
+
+                    console.log('Co-tasker added:', result);
+                    
+                    displayCoTaskers(result.coTaskers);
+                    updateTaskCoTaskersList(result.coTaskers);
+                    
+                    searchInput.value = '';
+                    searchResults.innerHTML = '';
+                    
+                    const successMsg = document.createElement('div');
+                    successMsg.className = 'success-message';
+                    successMsg.textContent = 'Co-tasker added successfully!';
+                    searchResults.appendChild(successMsg);
+                    setTimeout(() => successMsg.remove(), 3000);
+                    
                 } catch (error) {
                     console.error('Error adding co-tasker:', error);
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'error-message';
+                    errorMsg.textContent = error.message || 'Failed to add co-tasker';
+                    searchResults.appendChild(errorMsg);
+                    setTimeout(() => errorMsg.remove(), 3000);
+                    
+                    button.textContent = 'Error';
+                    setTimeout(() => {
+                        button.disabled = false;
+                        button.textContent = 'Add';
+                    }, 2000);
                 }
             });
         });
@@ -101,8 +142,42 @@ document.addEventListener('DOMContentLoaded', () => {
         coTaskerList.innerHTML = coTaskers.map(coTasker => `
             <div class="cotasker-item">
                 <span>${coTasker.name} (${coTasker.email})</span>
+                <button class="remove-cotasker" data-userid="${coTasker._id}">Remove</button>
             </div>
         `).join('');
+
+        const removeButtons = coTaskerList.querySelectorAll('.remove-cotasker');
+        removeButtons.forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const userId = button.dataset.userid;
+                await removeCoTasker(userId);
+            });
+        });
+    }
+
+    async function removeCoTasker(userId) {
+        const token = localStorage.getItem('token');
+        try {
+            const response = await fetch(`/api/users/coTaskers`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ userId })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to remove co-tasker');
+            }
+
+            const result = await response.json();
+            console.log('Co-tasker removed:', result);
+            loadCoTaskers();
+        } catch (error) {
+            console.error('Error removing co-tasker:', error);
+            alert(error.message || 'Failed to remove co-tasker');
+        }
     }
 
     function updateTaskCoTaskersList(coTaskers) {

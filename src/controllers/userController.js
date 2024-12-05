@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Task = require('../models/Task');
 
 exports.searchUsers = async (req, res) => {
     try {
@@ -15,50 +16,44 @@ exports.searchUsers = async (req, res) => {
 
 exports.addCoTasker = async (req, res) => {
     try {
-        const session = await User.startSession();
-        session.startTransaction();
-
-        try {
-            const user = await User.findById(req.userId).session(session);
-            const coTasker = await User.findById(req.body.userId).session(session);
-
-            if (!user || !coTasker) {
-                await session.abortTransaction();
-                return res.status(404).json({ message: 'User not found' });
-            }
-
-            // Initialize arrays if they don't exist
-            if (!user.coTaskers) user.coTaskers = [];
-            if (!coTasker.coTaskers) coTasker.coTaskers = [];
-
-            // Convert to strings for comparison
-            const userCoTaskerIds = user.coTaskers.map(id => id.toString());
-            const coTaskerIds = coTasker.coTaskers.map(id => id.toString());
-
-            // Add bidirectional relationship
-            if (!userCoTaskerIds.includes(coTasker._id.toString())) {
-                user.coTaskers.push(coTasker._id);
-                await user.save({ session });
-            }
-
-            if (!coTaskerIds.includes(user._id.toString())) {
-                coTasker.coTaskers.push(user._id);
-                await coTasker.save({ session });
-            }
-
-            await session.commitTransaction();
-            
-            // Reload both users with populated coTaskers
-            const updatedUser = await User.findById(req.userId)
-                .populate('coTaskers', 'name email');
-            
-            res.json({ message: 'Co-tasker added successfully', coTaskers: updatedUser.coTaskers });
-        } catch (error) {
-            await session.abortTransaction();
-            throw error;
-        } finally {
-            session.endSession();
+        // Check if userId is provided
+        if (!req.body.userId) {
+            return res.status(400).json({ message: 'User ID is required' });
         }
+
+        // Check if user exists
+        const user = await User.findById(req.userId);
+        const coTasker = await User.findById(req.body.userId);
+
+        if (!user || !coTasker) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Initialize arrays if they don't exist
+        if (!user.coTaskers) user.coTaskers = [];
+        if (!coTasker.coTaskers) coTasker.coTaskers = [];
+
+        // Check if already a co-tasker
+        if (user.coTaskers.includes(coTasker._id)) {
+            return res.status(400).json({ message: 'Already a co-tasker' });
+        }
+
+        // Add bidirectional relationship
+        user.coTaskers.push(coTasker._id);
+        coTasker.coTaskers.push(user._id);
+
+        // Save both users
+        await user.save();
+        await coTasker.save();
+
+        // Fetch updated user with populated coTaskers
+        const updatedUser = await User.findById(req.userId)
+            .populate('coTaskers', 'name email');
+
+        res.json({ 
+            message: 'Co-tasker added successfully', 
+            coTaskers: updatedUser.coTaskers 
+        });
     } catch (error) {
         console.error('Error in addCoTasker:', error);
         res.status(500).json({ message: error.message });
@@ -85,6 +80,61 @@ exports.getCoTaskers = async (req, res) => {
         res.json(user.coTaskers);
     } catch (error) {
         console.error('Error in getCoTaskers:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.removeCoTasker = async (req, res) => {
+    try {
+        const { userId } = req.body;
+        console.log('Removing co-tasker with ID:', userId);
+
+        if (!userId) {
+            return res.status(400).json({ message: 'User ID is required' });
+        }
+
+        const user = await User.findById(req.userId);
+        const coTasker = await User.findById(userId);
+
+        if (!user || !coTasker) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Remove co-tasker from both users
+        user.coTaskers.pull(coTasker._id);
+        coTasker.coTaskers.pull(user._id);
+
+        // Delete tasks where the co-tasker is assigned and the current user created them
+        await Task.deleteMany({
+            createdBy: user._id,
+            assignedTo: coTasker._id
+        });
+
+        // Unassign the co-tasker from tasks created by the user
+        await Task.updateMany(
+            { createdBy: user._id },
+            { $pull: { assignedTo: coTasker._id } }
+        );
+
+        // Delete tasks where the current user is assigned and the co-tasker created them
+        await Task.deleteMany({
+            createdBy: coTasker._id,
+            assignedTo: user._id
+        });
+
+        await user.save();
+        await coTasker.save();
+
+        // Return updated co-taskers list
+        const updatedUser = await User.findById(req.userId)
+            .populate('coTaskers', 'name email');
+
+        res.json({ 
+            message: 'Co-tasker removed successfully',
+            coTaskers: updatedUser.coTaskers 
+        });
+    } catch (error) {
+        console.error('Error in removeCoTasker:', error);
         res.status(500).json({ message: error.message });
     }
 };
