@@ -244,5 +244,3 @@ async function deleteTask(taskId) {
         alert('Failed to delete task');
     }
 }
-
-// ... Add more helper functions for task operations
