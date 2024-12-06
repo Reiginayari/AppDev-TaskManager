@@ -80,31 +80,15 @@ function createTaskElement(task) {
     const completedCount = task.userStatuses.filter(s => s.status === 'completed').length;
     const completionPercentage = totalUsers > 0 ? Math.round((completedCount / totalUsers) * 100) : 0;
 
-    // Create the task header first
-    const taskHeader = document.createElement('div');
-    taskHeader.className = 'task-header';
-    taskHeader.innerHTML = `
-        <h3>${task.title}</h3>
-        <span class="priority ${task.priority}">${task.priority}</span>
-    `;
-
-    // Add delete button if user is the creator
-    if (task.createdBy._id === currentUserId) {
-        const deleteButton = document.createElement('button');
-        deleteButton.className = 'delete-task';
-        deleteButton.dataset.taskId = task._id;
-        deleteButton.textContent = 'Delete';
-        deleteButton.addEventListener('click', async () => {
-            if (confirm('Are you sure you want to delete this task?')) {
-                await deleteTask(task._id);
+    div.innerHTML = `
+        <div class="task-header">
+            <h3>${task.title}</h3>
+            <span class="priority ${task.priority}">${task.priority}</span>
+            ${task.createdBy._id === currentUserId ? 
+                `<button class="delete-task" data-task-id="${task._id}">Delete</button>` 
+                : ''
             }
-        });
-        taskHeader.appendChild(deleteButton);
-    }
-
-    // Create the rest of the task content
-    div.appendChild(taskHeader);
-    div.innerHTML += `
+        </div>
         <p>${task.description}</p>
         <div class="task-meta">
             <span class="due-date">Due: ${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</span>
@@ -129,7 +113,16 @@ function createTaskElement(task) {
         </div>
     `;
 
-    // Add event listener for status changes
+    // Add event listeners after setting innerHTML
+    const deleteButton = div.querySelector('.delete-task');
+    if (deleteButton) {
+        deleteButton.addEventListener('click', async () => {
+            if (confirm('Are you sure you want to delete this task?')) {
+                await deleteTask(task._id);
+            }
+        });
+    }
+
     const statusSelect = div.querySelector('.status-select');
     if (statusSelect) {
         statusSelect.addEventListener('change', async (e) => {
