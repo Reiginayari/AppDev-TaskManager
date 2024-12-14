@@ -503,3 +503,113 @@ button:hover {
     border: 1px solid #ddd;
     border-radius: 4px;
 }
+
+.status-section {
+    margin: 15px 0;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.user-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    background: white;
+    border-radius: 4px;
+}
+
+.status-badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.9em;
+}
+
+.status-badge.pending {
+    background: #ffd700;
+    color: #000;
+}
+
+.status-badge.in-progress {
+    background: #1e90ff;
+    color: white;
+}
+
+.status-badge.completed {
+    background: #32cd32;
+    color: white;
+}
+
+.my-status {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.status-select {
+    margin-left: 10px;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.task-status {
+    margin: 15px 0;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.status-list {
+    margin: 10px 0;
+}
+
+.user-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    margin: 5px 0;
+    background: white;
+    border-radius: 4px;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.9em;
+}
+
+.status-badge.pending {
+    background: #ffd700;
+    color: #000;
+}
+
+.status-badge.in-progress {
+    background: #1e90ff;
+    color: white;
+}
+
+.status-badge.completed {
+    background: #32cd32;
+    color: white;
+}
+
+.my-status {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.status-select {
+    margin-left: 10px;
+    padding: 5px;
+    border-radius: 4px;
+}
