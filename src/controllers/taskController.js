@@ -146,3 +146,14 @@ exports.updateTaskStatus = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 };
+
+exports.getAllTasks = async (req, res) => {
+    const { priority, dueDate } = req.query;
+    const filter = {};
+
+    if (priority && priority !== 'all') filter.priority = priority;
+    if (dueDate) filter.dueDate = { $lte: new Date(dueDate) };
+
+    const tasks = await Task.find(filter).populate('assignedTo createdBy');
+    res.json(tasks);
+};

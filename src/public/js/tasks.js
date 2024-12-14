@@ -244,3 +244,18 @@ async function deleteTask(taskId) {
         alert('Failed to delete task');
     }
 }
+
+document.getElementById('filter-priority').addEventListener('change', loadTasks);
+document.getElementById('filter-date').addEventListener('change', loadTasks);
+
+async function loadTasks() {
+    const priority = document.getElementById('filter-priority').value;
+    const dueDate = document.getElementById('filter-date').value;
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`/api/tasks?priority=${priority}&dueDate=${dueDate}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const tasks = await response.json();
+    displayTasks(tasks);
+}
