@@ -81,35 +81,22 @@ function createTaskElement(task) {
     const completionPercentage = totalUsers > 0 ? Math.round((completedCount / totalUsers) * 100) : 0;
 
     div.innerHTML = `
-        <div class="task-header">
+     <div class="task-header">
             <h3>${task.title}</h3>
             <span class="priority ${task.priority}">${task.priority}</span>
-            ${task.createdBy._id === currentUserId ? 
-                `<button class="delete-task" data-task-id="${task._id}">Delete</button>` 
-                : ''
-            }
         </div>
         <p>${task.description}</p>
-        <div class="task-meta">
-            <span class="due-date">Due: ${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</span>
-            <div class="completion-progress">
-                <div class="progress-bar" style="width: ${completionPercentage}%"></div>
-                <span>${completionPercentage}% Complete (${completedCount}/${totalUsers} completed)</span>
-            </div>
-        </div>
-        <div class="task-statuses">
-            ${task.userStatuses.map(status => `
-                <div class="user-status">
-                    <span>${status.user.name}: ${status.status}</span>
-                    ${status.user._id === currentUserId ? `
-                        <select class="status-select" data-task-id="${task._id}">
-                            <option value="pending" ${status.status === 'pending' ? 'selected' : ''}>Pending</option>
-                            <option value="in-progress" ${status.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
-                            <option value="completed" ${status.status === 'completed' ? 'selected' : ''}>Completed</option>
-                        </select>
-                    ` : ''}
-                </div>
-            `).join('')}
+        <div class="comments-section">
+            <h4>Comments:</h4>
+            <ul id="comment-list-${task._id}">
+                ${task.comments.map(comment => `
+                    <li>
+                        <strong>${comment.user.name}</strong>: ${comment.text}
+                    </li>
+                `).join('')}
+            </ul>
+            <textarea id="comment-input-${task._id}" placeholder="Add a comment..."></textarea>
+            <button onclick="addComment('${task._id}')">Add Comment</button>
         </div>
     `;
 
@@ -133,6 +120,27 @@ function createTaskElement(task) {
     }
 
     return div;
+}
+
+async function addComment(taskId) {
+    const commentText = document.getElementById(`comment-input-${taskId}`).value;
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(`/api/tasks/${taskId}/comments`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ text: commentText })
+    });
+
+    if (response.ok) {
+        const updatedTask = await response.json();
+        displayTasks([updatedTask]); // Re-render the updated task
+    } else {
+        console.error('Error adding comment');
+    }
 }
 
 function setupEventListeners() {

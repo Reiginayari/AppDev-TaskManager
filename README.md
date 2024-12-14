@@ -2,6 +2,10 @@
 
 AppDev Task Manager is a web application designed to help users manage tasks efficiently. It allows users to create, update, and delete tasks, as well as manage co-taskers.
 
+## Members
+- Reigina Mascariñas
+- Peter Abangan
+
 ## Features
 
 - User authentication (login and registration)
