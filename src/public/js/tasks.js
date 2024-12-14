@@ -80,23 +80,38 @@ function createTaskElement(task) {
     const completedCount = task.userStatuses.filter(s => s.status === 'completed').length;
     const completionPercentage = totalUsers > 0 ? Math.round((completedCount / totalUsers) * 100) : 0;
 
+    // Format comments with proper user information
+    const commentsHTML = task.comments && task.comments.length > 0 
+        ? task.comments.map(comment => `
+            <li class="comment">
+                <div class="comment-header">
+                    <span class="commenter-name">${comment.user ? comment.user.name : 'Unknown User'}</span>
+                    <span class="comment-date">${new Date(comment.createdAt).toLocaleString()}</span>
+                </div>
+                <div class="comment-text">${comment.text}</div>
+            </li>
+        `).join('')
+        : '<li>No comments yet</li>';
+
     div.innerHTML = `
-     <div class="task-header">
+        <div class="task-header">
             <h3>${task.title}</h3>
             <span class="priority ${task.priority}">${task.priority}</span>
         </div>
         <p>${task.description}</p>
+        <div class="task-meta">
+            <span>Created by: ${task.createdBy.name}</span>
+            <span>Due: ${task.dueDate ? new Date(task.dueDate).toLocaleString() : 'No due date'}</span>
+        </div>
         <div class="comments-section">
             <h4>Comments:</h4>
-            <ul id="comment-list-${task._id}">
-                ${task.comments.map(comment => `
-                    <li>
-                        <strong>${comment.user.name}</strong>: ${comment.text}
-                    </li>
-                `).join('')}
+            <ul class="comment-list">
+                ${commentsHTML}
             </ul>
-            <textarea id="comment-input-${task._id}" placeholder="Add a comment..."></textarea>
-            <button onclick="addComment('${task._id}')">Add Comment</button>
+            <div class="comment-input-container">
+                <textarea id="comment-input-${task._id}" placeholder="Add a comment..."></textarea>
+                <button onclick="addComment('${task._id}')">Add Comment</button>
+            </div>
         </div>
     `;
 
@@ -124,22 +139,45 @@ function createTaskElement(task) {
 
 async function addComment(taskId) {
     const commentText = document.getElementById(`comment-input-${taskId}`).value;
+    if (!commentText.trim()) return; // Don't submit empty comments
+    
     const token = localStorage.getItem('token');
     
-    const response = await fetch(`/api/tasks/${taskId}/comments`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ text: commentText })
-    });
+    try {
+        const response = await fetch(`/api/tasks/${taskId}/comments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ text: commentText })
+        });
 
-    if (response.ok) {
-        const updatedTask = await response.json();
-        displayTasks([updatedTask]); 
-    } else {
-        console.error('Error adding comment');
+        if (response.ok) {
+            const updatedTask = await response.json();
+            
+            // Update only the comments section of this specific task
+            const commentsList = document.getElementById(`comment-list-${taskId}`);
+            const commentsHTML = updatedTask.comments.map(comment => `
+                <li class="comment">
+                    <div class="comment-header">
+                        <span class="commenter-name">${comment.user.name}</span>
+                        <span class="comment-date">${new Date(comment.createdAt).toLocaleString()}</span>
+                    </div>
+                    <div class="comment-text">${comment.text}</div>
+                </li>
+            `).join('');
+            
+            commentsList.innerHTML = commentsHTML;
+            
+            // Clear the input field
+            document.getElementById(`comment-input-${taskId}`).value = '';
+        } else {
+            throw new Error('Failed to add comment');
+        }
+    } catch (error) {
+        console.error('Error adding comment:', error);
+        alert('Failed to add comment');
     }
 }
 

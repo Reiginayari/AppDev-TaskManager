@@ -457,3 +457,49 @@ button:hover {
     padding: 0.5rem 0;
     border-bottom: 1px solid #ddd;
 }
+
+.comment-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+.comment {
+    border-bottom: 1px solid #eee;
+    padding: 8px 0;
+    margin-bottom: 8px;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.commenter-name {
+    font-weight: bold;
+    color: #333;
+}
+
+.comment-date {
+    font-size: 0.8em;
+    color: #666;
+}
+
+.comment-text {
+    margin-left: 8px;
+    color: #444;
+}
+
+.comment-input-container {
+    margin-top: 10px;
+}
+
+.comment-input-container textarea {
+    width: 100%;
+    min-height: 60px;
+    margin-bottom: 8px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}

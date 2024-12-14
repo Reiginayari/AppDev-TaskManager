@@ -18,6 +18,7 @@ exports.getAllTasks = async (req, res) => {
             .populate('assignedTo', 'name email')
             .populate('createdBy', 'name email')
             .populate('userStatuses.user', 'name email')
+            .populate('comments.user', 'name email')
             .sort('-createdAt');
 
         res.json(tasks);
