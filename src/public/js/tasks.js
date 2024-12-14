@@ -137,7 +137,7 @@ async function addComment(taskId) {
 
     if (response.ok) {
         const updatedTask = await response.json();
-        displayTasks([updatedTask]); // Re-render the updated task
+        displayTasks([updatedTask]); 
     } else {
         console.error('Error adding comment');
     }

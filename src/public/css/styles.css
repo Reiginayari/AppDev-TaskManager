@@ -379,6 +379,7 @@ button:hover {
     background-color: #0056b3;
 }
 
+/* Notification Styles */
 #notifications {
     position: relative;
 }
@@ -413,6 +414,7 @@ button:hover {
     color: #888;
 }
 
+/* Comments Styles */
 .comments-section {
     margin-top: 1rem;
     padding: 1rem;

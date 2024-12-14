@@ -169,8 +169,8 @@ exports.getAllTasks = async (req, res) => {
 
 exports.addComment = async (req, res) => {
     try {
-        const { taskId } = req.params;  // Get taskId from params
-        const { text } = req.body;      // Get the comment text from the request body
+        const { taskId } = req.params;  
+        const { text } = req.body;      
 
         // Find the task by its ID
         const task = await Task.findById(taskId);
@@ -178,14 +178,12 @@ exports.addComment = async (req, res) => {
 
         // Create a comment object
         const comment = {
-            user: req.userId,  // User ID of the commenter
+            user: req.userId,  
             text: text
         };
 
-        // Push the new comment into the comments array of the task
         task.comments.push(comment);
 
-        // Save the updated task
         await task.save();
 
         // Return the updated task with populated comments
