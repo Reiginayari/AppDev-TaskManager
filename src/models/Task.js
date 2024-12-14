@@ -53,23 +53,24 @@ const taskSchema = new mongoose.Schema({
     comments: [commentSchema],  
     assignedTo: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        ref: 'User',
+        index: true
     }],
     userStatuses: [taskUserStatusSchema],
-    assignedTo: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    }],
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: true,
+        index: true
     },
     createdAt: {
         type: Date,
         default: Date.now
     }
-});
+}, { timestamps: true });
+
+// Add compound index for better query performance
+taskSchema.index({ createdBy: 1, assignedTo: 1 });
 
 // Calculate completion percentage
 taskSchema.methods.getCompletionPercentage = function() {

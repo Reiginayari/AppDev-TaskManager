@@ -3,33 +3,23 @@ const User = require('../models/User');
 
 exports.getAllTasks = async (req, res) => {
     try {
-        // First, get the user with their co-taskers
-        const user = await User.findById(req.userId).select('coTaskers');
-        
-        // Get tasks where:
-        // 1. User created the task
-        // 2. User is assigned to the task
-        // 3. Task is created by one of user's co-taskers AND user is assigned to it
-        const tasks = await Task.find({
+        const { priority, dueDate } = req.query;
+        const filter = {
             $or: [
                 { createdBy: req.userId },
-                { assignedTo: req.userId },
-                { 
-                    $and: [
-                        { createdBy: { $in: user.coTaskers || [] } },
-                        { assignedTo: req.userId }
-                    ]
-                }
+                { assignedTo: req.userId }
             ]
-        })
-        .populate('assignedTo', 'name email')
-        .populate('createdBy', 'name email')
-        .sort('-createdAt');
-        
-        console.log('User ID:', req.userId);
-        console.log('User co-taskers:', user.coTaskers);
-        console.log('Found tasks:', tasks);
-        
+        };
+
+        if (priority && priority !== 'all') filter.priority = priority;
+        if (dueDate) filter.dueDate = { $lte: new Date(dueDate) };
+
+        const tasks = await Task.find(filter)
+            .populate('assignedTo', 'name email')
+            .populate('createdBy', 'name email')
+            .populate('userStatuses.user', 'name email')
+            .sort('-createdAt');
+
         res.json(tasks);
     } catch (error) {
         console.error('Error in getAllTasks:', error);
@@ -154,17 +144,6 @@ exports.updateTaskStatus = async (req, res) => {
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
-};
-
-exports.getAllTasks = async (req, res) => {
-    const { priority, dueDate } = req.query;
-    const filter = {};
-
-    if (priority && priority !== 'all') filter.priority = priority;
-    if (dueDate) filter.dueDate = { $lte: new Date(dueDate) };
-
-    const tasks = await Task.find(filter).populate('assignedTo createdBy');
-    res.json(tasks);
 };
 
 exports.addComment = async (req, res) => {
