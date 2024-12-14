@@ -13,6 +13,22 @@ const taskUserStatusSchema = new mongoose.Schema({
     }
 }, { _id: false });
 
+const commentSchema = new mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    text: {
+        type: String,
+        required: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
 const taskSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -34,6 +50,11 @@ const taskSchema = new mongoose.Schema({
         enum: ['high', 'medium', 'low'],
         default: 'medium'
     },
+    comments: [commentSchema],  
+    assignedTo: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
     userStatuses: [taskUserStatusSchema],
     assignedTo: [{
         type: mongoose.Schema.Types.ObjectId,

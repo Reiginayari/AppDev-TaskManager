@@ -5,6 +5,9 @@ const authMiddleware = require('../middleware/auth');
 
 router.use(authMiddleware);
 
+router.post('/:taskId/comments', taskController.addComment);
+
+
 router.get('/', taskController.getAllTasks);
 router.post('/', taskController.createTask);
 router.put('/:id', taskController.updateTask);
