@@ -613,3 +613,28 @@ button:hover {
     padding: 5px;
     border-radius: 4px;
 }
+
+.status-update-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.current-status {
+    display: inline-block;
+    min-width: 80px;
+    text-align: center;
+}
+
+.status-select {
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background-color: white;
+    cursor: pointer;
+}
+
+.status-select:hover {
+    border-color: #1e90ff;
+}

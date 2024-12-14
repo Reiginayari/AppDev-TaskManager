@@ -106,12 +106,16 @@ function createTaskElement(task) {
             </div>
             ${(task.assignedTo.some(u => u._id === currentUserId) || task.createdBy._id === currentUserId) ? `
                 <div class="my-status">
-                    <label>Update My Status:</label>
-                    <select class="status-select" onchange="updateTaskStatus('${task._id}', this.value)">
-                        <option value="pending" ${userStatus === 'pending' ? 'selected' : ''}>Pending</option>
-                        <option value="in-progress" ${userStatus === 'in-progress' ? 'selected' : ''}>In Progress</option>
-                        <option value="completed" ${userStatus === 'completed' ? 'selected' : ''}>Completed</option>
-                    </select>
+                    <label>My Status:</label>
+                    <div class="status-update-container">
+                        <span class="current-status status-badge ${userStatus}">${userStatus}</span>
+                        <select class="status-select" onchange="updateTaskStatus('${task._id}', this.value)">
+                            <option value="">Change Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
                 </div>
             ` : ''}
         </div>
