@@ -71,17 +71,26 @@ exports.createTask = async (req, res) => {
 
 exports.updateTask = async (req, res) => {
     try {
-        const task = await Task.findOneAndUpdate(
-            { _id: req.params.id, createdBy: req.userId },
-            req.body,
-            { new: true }
-        )
-        .populate('assignedTo', 'name email')
-        .populate('createdBy', 'name email');
+        const task = await Task.findById(req.params.id);
+        if (!task) return res.status(404).json({ message: 'Task not found' });
 
-        if (!task) {
-            return res.status(404).json({ message: 'Task not found' });
-        }
+        const updates = req.body;
+        Object.assign(task, updates);
+        await task.save();
+
+        // Notify assigned users
+        const notifications = task.assignedTo.map(userId => ({
+            userId,
+            message: `Task "${task.title}" has been updated.`,
+            taskId: task._id,
+        }));
+
+        // Save notifications to each user
+        await Promise.all(notifications.map(async (notification) => {
+            const user = await User.findById(notification.userId);
+            user.notifications.push(notification);
+            await user.save();
+        }));
 
         res.json(task);
     } catch (error) {

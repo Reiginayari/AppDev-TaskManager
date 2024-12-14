@@ -34,4 +34,16 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
     return bcrypt.compare(candidatePassword, this.password);
 };
 
+const notificationSchema = new mongoose.Schema({
+    message: { type: String, required: true },
+    taskId: { type: mongoose.Schema.Types.ObjectId, ref: 'Task' },
+    createdAt: { type: Date, default: Date.now },
+    read: { type: Boolean, default: false },
+});
+
+userSchema.add({
+    notifications: [notificationSchema],
+});
+
 module.exports = mongoose.model('User', userSchema);
+

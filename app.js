@@ -40,3 +40,9 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
 });
+
+// Import the job scheduler
+const { scheduleDueDateNotifications } = require('./src/jobs/notifications');
+
+// Schedule jobs
+scheduleDueDateNotifications();

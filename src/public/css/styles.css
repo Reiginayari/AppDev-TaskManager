@@ -378,3 +378,37 @@ button:hover {
 .auth-form button[type="submit"]:hover {
     background-color: #0056b3;
 }
+
+#notifications {
+    position: relative;
+}
+
+#notification-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    display: none;
+    width: 300px;
+    z-index: 1000;
+}
+
+#notification-dropdown.visible {
+    display: block;
+}
+
+#notification-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.notification-container .unread {
+    font-weight: bold;
+}
+
+.notification-container .read {
+    color: #888;
+}

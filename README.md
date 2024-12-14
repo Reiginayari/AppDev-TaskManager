@@ -18,6 +18,7 @@ AppDev Task Manager is a web application designed to help users manage tasks eff
 - JSON Web Tokens (JWT) for authentication
 - EJS for templating
 - CSS for styling
+- Node Schedule
 
 ## Getting Started
 
