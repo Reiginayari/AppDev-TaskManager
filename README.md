@@ -37,7 +37,7 @@ AppDev Task Manager is a web application designed to help users manage tasks eff
 
    ```bash
    git clone https://github.com/yourusername/appdev-taskmanager.git
-   cd appdev-taskmanager
+   cd AppDev-TaskManager
    ```
 
 2. Install the dependencies:
