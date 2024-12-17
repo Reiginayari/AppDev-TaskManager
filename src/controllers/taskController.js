@@ -4,105 +4,77 @@ const { getIO } = require('../config/socket');
 
 exports.getAllTasks = async (req, res) => {
     try {
-        const { priority, dueDate, search } = req.query;
-        
-        const filter = {
-            $or: [
-                { createdBy: req.userId },
-                { assignedTo: req.userId }
+        const searchTerm = req.query.search;
+        const dateFilter = req.query.dueDate;
+
+        let query = {
+            $and: [
+                {
+                    $or: [
+                        { createdBy: req.userId },
+                        { assignedTo: req.userId }
+                    ]
+                }
             ]
         };
 
-        if (search) {
-            filter.$and = [{
+        if (searchTerm) {
+            query.$and.push({
                 $or: [
-                    { title: { $regex: search, $options: 'i' } },
-                    { description: { $regex: search, $options: 'i' } }
+                    { title: { $regex: searchTerm, $options: 'i' } },
+                    { description: { $regex: searchTerm, $options: 'i' } }
                 ]
-            }];
+            });
         }
 
-        if (priority && priority !== 'all') {
-            filter.priority = priority.toLowerCase();
-        }
-
-        if (dueDate) {
-            const selectedDate = new Date(dueDate);
-            selectedDate.setHours(23, 59, 59, 999);
+        if (dateFilter) {
+            const filterDate = new Date(dateFilter);
+            filterDate.setHours(0, 0, 0, 0);
+            const nextDay = new Date(filterDate);
+            nextDay.setDate(nextDay.getDate() + 1);
             
-            const startDate = new Date(dueDate);
-            startDate.setHours(0, 0, 0, 0);
-            
-            filter.dueDate = {
-                $gte: startDate,
-                $lte: selectedDate
-            };
+            query.$and.push({
+                dueDate: {
+                    $gte: filterDate,
+                    $lt: nextDay
+                }
+            });
         }
 
-        const tasks = await Task.find(filter)
+        const tasks = await Task.find(query)
             .populate('assignedTo', 'name email')
             .populate('createdBy', 'name email')
             .populate('userStatuses.user', 'name email')
-            .populate('comments.user', 'name email')
-            .sort('-createdAt');
+            .sort({ dueDate: 1 });
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         const dueToday = [];
         const upcoming = {};
-        const byPriority = { high: [], medium: [], low: [] };
 
-        // If priority filter is active, only show tasks in byPriority
-        if (priority && priority !== 'all') {
-            tasks.forEach(task => {
-                if (task.priority === priority.toLowerCase()) {
-                    byPriority[priority.toLowerCase()].push(task);
-                }
-            });
-
-            return res.json({
-                dueToday: [],
-                upcoming: {},
-                byPriority: {
-                    High: byPriority.high,
-                    Medium: byPriority.medium,
-                    Low: byPriority.low
-                }
-            });
-        }
-
-        // Normal categorization for no priority filter
         tasks.forEach(task => {
-            if (task.dueDate && new Date(task.dueDate).toDateString() === today.toDateString()) {
-                dueToday.push(task);
-            }
-
             if (task.dueDate) {
                 const taskDueDate = new Date(task.dueDate);
-                const daysDiff = Math.ceil((taskDueDate - today) / (1000 * 60 * 60 * 24));
-                if (daysDiff > 0 && daysDiff <= 7) {
-                    const formattedDate = taskDueDate.toDateString();
-                    if (!upcoming[formattedDate]) upcoming[formattedDate] = [];
+                taskDueDate.setHours(0, 0, 0, 0);
+
+                if (taskDueDate.getTime() === today.getTime()) {
+                    dueToday.push(task);
+                } else if (taskDueDate > today) {
+                    const formattedDate = taskDueDate.toISOString().split('T')[0];
+                    if (!upcoming[formattedDate]) {
+                        upcoming[formattedDate] = [];
+                    }
                     upcoming[formattedDate].push(task);
                 }
             }
-
-            const taskPriority = task.priority.toLowerCase();
-            byPriority[taskPriority].push(task);
         });
 
         res.json({
             dueToday,
-            upcoming,
-            byPriority: {
-                High: byPriority.high,
-                Medium: byPriority.medium,
-                Low: byPriority.low
-            }
+            upcoming
         });
     } catch (error) {
-        console.error('Error in getAllTasks:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -111,8 +83,9 @@ exports.createTask = async (req, res) => {
     try {
         const { title, description, priority, assignedTo, dueDate } = req.body;
         
-        // Create initial user statuses for all assigned users
-        const userStatuses = assignedTo.map(userId => ({
+        // Create initial user statuses for creator and all assigned users
+        const allUsers = [req.userId, ...assignedTo];
+        const userStatuses = allUsers.map(userId => ({
             user: userId,
             status: 'pending'
         }));

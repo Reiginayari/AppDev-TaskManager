@@ -101,7 +101,12 @@ function createTaskElement(task) {
         status.user._id === currentUserId
     )?.status || 'pending';
 
-    // Get all users involved in the task (creator and assigned users)
+    // Calculate completion percentage
+    const totalUsers = task.userStatuses.length;
+    const completedUsers = task.userStatuses.filter(s => s.status === 'completed').length;
+    const completionPercentage = totalUsers > 0 ? Math.round((completedUsers / totalUsers) * 100) : 0;
+
+    // Get all users involved in the task
     const allUsers = [task.createdBy, ...task.assignedTo];
     const uniqueUsers = Array.from(new Set(allUsers.map(user => user._id)))
         .map(id => allUsers.find(user => user._id === id));
@@ -123,13 +128,7 @@ function createTaskElement(task) {
             <li class="comment">
                 <div class="comment-header">
                     <span class="commenter-name">${comment.user.name}</span>
-                    <span class="comment-date">${new Date(comment.createdAt).toLocaleString(undefined, {
-                        year: 'numeric',
-                        month: 'numeric',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}</span>
+                    <span class="comment-date">${new Date(comment.createdAt).toLocaleString()}</span>
                 </div>
                 <div class="comment-text">${comment.text}</div>
             </li>
@@ -144,13 +143,11 @@ function createTaskElement(task) {
         <p>${task.description}</p>
         <div class="task-meta">
             <span>Created by: ${task.createdBy.name}</span>
-            <span>Due: ${task.dueDate ? new Date(task.dueDate).toLocaleString(undefined, {
-                year: 'numeric',
-                month: 'numeric',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }) : 'No due date'}</span>
+            <span>Due: ${task.dueDate ? new Date(task.dueDate).toLocaleString() : 'No due date'}</span>
+        </div>
+        <div class="completion-bar">
+            <div class="completion-progress" style="width: ${completionPercentage}%"></div>
+            <span class="completion-text">${completionPercentage}% Complete</span>
         </div>
         <div class="status-section">
             <h4>Task Status:</h4>
@@ -160,25 +157,22 @@ function createTaskElement(task) {
             ${(task.assignedTo.some(u => u._id === currentUserId) || task.createdBy._id === currentUserId) ? `
                 <div class="my-status">
                     <label>My Status:</label>
-                    <div class="status-update-container">
-                        <span class="current-status status-badge ${userStatus}">${userStatus}</span>
-                        <select class="status-select" onchange="updateTaskStatus('${task._id}', this.value)">
-                            <option value="">Change Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="in-progress">In Progress</option>
-                            <option value="completed">Completed</option>
-                        </select>
-                    </div>
+                    <select class="status-select" onchange="updateTaskStatus('${task._id}', this.value)">
+                        <option value="">Change Status</option>
+                        <option value="pending" ${userStatus === 'pending' ? 'selected' : ''}>Pending</option>
+                        <option value="in-progress" ${userStatus === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                        <option value="completed" ${userStatus === 'completed' ? 'selected' : ''}>Completed</option>
+                    </select>
                 </div>
             ` : ''}
         </div>
         <div class="comments-section">
             <h4>Comments:</h4>
-            <ul class="comment-list" id="comment-list-${task._id}">
+            <ul class="comment-list">
                 ${commentsHTML}
             </ul>
             <div class="comment-input-container">
-                <textarea id="comment-input-${task._id}" placeholder="Add a comment..."></textarea>
+                <textarea placeholder="Add a comment..." id="comment-input-${task._id}"></textarea>
                 <button onclick="addComment('${task._id}')">Add Comment</button>
             </div>
         </div>
@@ -290,53 +284,40 @@ async function loadTasks() {
     }
 }
 
-function displayTasks(taskData) {
+async function displayTasks(taskData) {
     const taskList = document.getElementById('task-list');
     taskList.innerHTML = '';
 
-    if (!taskData || (!taskData.dueToday && !taskData.upcoming && !taskData.byPriority)) {
+    if (!taskData || (!taskData.dueToday && !taskData.upcoming)) {
         taskList.innerHTML = '<p>No tasks available.</p>';
         return;
     }
 
-    // Display Due Today tasks if not filtering by priority
-    if (!document.getElementById('filter-priority').value || document.getElementById('filter-priority').value === 'all') {
-        if (taskData.dueToday && taskData.dueToday.length > 0) {
-            taskList.innerHTML += `<h2 class="task-group-header">Due Today</h2>`;
-            taskData.dueToday.forEach(task => {
-                const taskElement = createTaskElement(task);
-                taskList.appendChild(taskElement);
-            });
-        }
+    // Display Due Today tasks
+    if (taskData.dueToday && taskData.dueToday.length > 0) {
+        taskList.innerHTML += `<h2 class="task-group-header">Due Today</h2>`;
+        // Sort by priority within due today
+        taskData.dueToday.forEach(task => {
+            const taskElement = createTaskElement(task);
+            taskList.appendChild(taskElement);
+        });
+    }
 
-        // Display Upcoming tasks
-        if (taskData.upcoming && Object.keys(taskData.upcoming).length > 0) {
-            Object.keys(taskData.upcoming).sort((a, b) => new Date(a) - new Date(b)).forEach(date => {
-                taskList.innerHTML += `<h2 class="task-group-header">Upcoming: ${date}</h2>`;
+    // Display Upcoming tasks
+    if (taskData.upcoming && Object.keys(taskData.upcoming).length > 0) {
+        Object.keys(taskData.upcoming)
+            .sort((a, b) => new Date(a) - new Date(b))
+            .forEach(date => {
+                taskList.innerHTML += `<h2 class="task-group-header">Due: ${new Date(date).toLocaleDateString()}</h2>`;
                 taskData.upcoming[date].forEach(task => {
                     const taskElement = createTaskElement(task);
                     taskList.appendChild(taskElement);
                 });
             });
-        }
-    }
-
-    // Display tasks by Priority
-    if (taskData.byPriority) {
-        const priorities = ['High', 'Medium', 'Low'];
-        priorities.forEach(priority => {
-            if (taskData.byPriority[priority] && taskData.byPriority[priority].length > 0) {
-                taskList.innerHTML += `<h3 class="priority-group-header">${priority} Priority</h3>`;
-                taskData.byPriority[priority].forEach(task => {
-                    const taskElement = createTaskElement(task);
-                    taskList.appendChild(taskElement);
-                });
-            }
-        });
     }
 
     if (taskList.innerHTML === '') {
-        taskList.innerHTML = '<p>No tasks found matching the current filters.</p>';
+        taskList.innerHTML = '<p>No tasks found.</p>';
     }
 }
 
@@ -366,6 +347,8 @@ function updateTaskCoTaskersList(coTaskers) {
 }
 
 async function updateTaskStatus(taskId, newStatus) {
+    if (!newStatus) return;
+    
     const token = localStorage.getItem('token');
     try {
         const response = await fetch(`/api/tasks/${taskId}/status`, {
@@ -383,9 +366,12 @@ async function updateTaskStatus(taskId, newStatus) {
 
         const updatedTask = await response.json();
         
+        // Get the task element and its components
         const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
         const statusList = taskElement.querySelector('.status-list');
+        const myStatusBadge = taskElement.querySelector('.current-status');
         
+        // Update the status list
         const allUsers = [updatedTask.createdBy, ...updatedTask.assignedTo];
         const uniqueUsers = Array.from(new Set(allUsers.map(user => user._id)))
             .map(id => allUsers.find(user => user._id === id));
@@ -400,7 +386,27 @@ async function updateTaskStatus(taskId, newStatus) {
             `;
         }).join('');
         
+        // Update UI elements
         statusList.innerHTML = statusListHTML;
+        
+        // Update my status badge
+        if (myStatusBadge) {
+            myStatusBadge.className = `current-status status-badge ${newStatus}`;
+            myStatusBadge.textContent = newStatus;
+        }
+
+        // Update completion percentage
+        const completionPercentage = Math.round((updatedTask.userStatuses.filter(s => s.status === 'completed').length / updatedTask.userStatuses.length) * 100);
+        const completionBar = taskElement.querySelector('.completion-progress');
+        const completionText = taskElement.querySelector('.completion-text');
+        
+        if (completionBar) {
+            completionBar.style.width = `${completionPercentage}%`;
+        }
+        if (completionText) {
+            completionText.textContent = `${completionPercentage}% Complete`;
+        }
+
     } catch (error) {
         console.error('Error updating task status:', error);
         alert('Failed to update task status');

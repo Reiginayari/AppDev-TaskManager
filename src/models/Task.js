@@ -74,8 +74,13 @@ taskSchema.index({ createdBy: 1, assignedTo: 1 });
 
 // Calculate completion percentage
 taskSchema.methods.getCompletionPercentage = function() {
+    // If there are no assigned users or no user statuses, return 0
     if (!this.userStatuses || this.userStatuses.length === 0) return 0;
+    
+    // Count how many users have completed status
     const completedCount = this.userStatuses.filter(status => status.status === 'completed').length;
+    
+    // Calculate percentage based on all users (including creator)
     return Math.round((completedCount / this.userStatuses.length) * 100);
 };
 
