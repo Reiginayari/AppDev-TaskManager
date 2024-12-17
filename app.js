@@ -5,8 +5,12 @@ const path = require('path');
 const expressLayouts = require('express-ejs-layouts');
 const connectDB = require('./src/config/db');
 require('dotenv').config();
+const http = require('http');
+const socketIo = require('socket.io');
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
 
 // View engine setup
 app.set('view engine', 'ejs');
@@ -36,9 +40,22 @@ app.get('/app', (req, res) => {
 // Connect to database
 connectDB();
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+// Set up socket.io to send notifications to the client
+io.on('connection', (socket) => {
+    console.log('User connected to notifications');
+
+    socket.on('taskUpdated', (task) => {
+        console.log(`Task updated: ${task.title}`);
+        io.emit('notification', {
+            message: `${task.title} has been updated.`,
+            taskId: task._id,
+            timestamp: new Date().toLocaleString()
+        });
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected from notifications');
+    });
 });
 
 // Import the job scheduler
@@ -46,3 +63,9 @@ const { scheduleDueDateNotifications } = require('./src/jobs/notifications');
 
 // Schedule jobs
 scheduleDueDateNotifications();
+
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+});

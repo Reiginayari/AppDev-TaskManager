@@ -1,7 +1,10 @@
+let notifications = [];
+
 document.addEventListener('DOMContentLoaded', () => {
     loadTasks();
     setupEventListeners();
     displayUserName();
+    renderNotifications();
 });
 
 function displayUserName() {
@@ -41,6 +44,8 @@ async function handleTaskSubmit(e) {
             document.getElementById('task-modal').classList.remove('visible');
             form.reset();
             loadTasks();
+
+            addNotification(`New task "${task.title}" created successfully.`);
         }
     } catch (error) {
         console.error('Error creating task:', error);
@@ -395,4 +400,23 @@ async function loadTasks() {
     }
 }
 
+function renderNotifications() {
+    const notificationsList = document.getElementById('notifications-list');
+    notificationsList.innerHTML = notifications.map(notification => `
+        <div class="notification">
+            <span class="notification-message">${notification.message}</span>
+            <span class="notification-time">${new Date(notification.time).toLocaleString()}</span>
+        </div>
+    `).join('');
+}
+
+function addNotification(message) {
+    const newNotification = {
+        message: message,
+        time: new Date()
+    };
+
+    notifications.push(newNotification);  
+    renderNotifications();  
+}
 

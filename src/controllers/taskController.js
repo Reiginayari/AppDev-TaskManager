@@ -1,5 +1,6 @@
 const Task = require('../models/Task');
 const User = require('../models/User');
+const { io } = require('../app');
 
 exports.getAllTasks = async (req, res) => {
     try {
@@ -100,10 +101,19 @@ exports.updateTask = async (req, res) => {
         Object.assign(task, updates);
         await task.save();
 
-        // Notify assigned users
+       // Emit notification via Socket.io to all connected users
+       const notification = {
+        message: `Task "${task.title}" has been updated.`,
+        taskId: task._id,
+        timestamp: new Date().toLocaleString()
+        };
+
+        io.emit('notification', notification); 
+
+        // Save notifications to each assigned user
         const notifications = task.assignedTo.map(userId => ({
             userId,
-            message: `Task "${task.title}" has been updated.`,
+            message: notification.message,
             taskId: task._id,
         }));
 
@@ -165,6 +175,14 @@ exports.updateTaskStatus = async (req, res) => {
             });
         }
 
+        const notification = {
+            message: `Task "${task.title}" status has been updated to "${status}".`,
+            taskId: task._id,
+            timestamp: new Date().toLocaleString()
+        };
+        
+        io.emit('notification', notification);
+
         await task.save();
 
         const updatedTask = await Task.findById(task._id)
@@ -197,11 +215,28 @@ exports.addComment = async (req, res) => {
 
         await task.save();
 
+        const notification = {
+            message: `New comment added to task "${task.title}".`,
+            taskId: task._id,
+            timestamp: new Date().toLocaleString()
+        };
+
         // Return the updated task with populated comments
         const updatedTask = await Task.findById(taskId).populate('comments.user', 'name email');
         res.status(201).json(updatedTask);
     } catch (error) {
         console.error('Error adding comment:', error);
         res.status(500).json({ message: error.message });
+    }
+};
+
+exports.getNotifications = async (req, res) => {
+    try {
+        const user = req.user;  
+        const notifications = await Notification.find({ userId: user._id }).sort({ createdAt: -1 });
+        res.json(notifications);
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        res.status(500).send('Server error');
     }
 };
