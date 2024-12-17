@@ -212,21 +212,25 @@ function displayTasks(tasks) {
     const taskList = document.getElementById('task-list');
     taskList.innerHTML = '';
 
+    if (!Array.isArray(tasks)) {
+        console.error("displayTasks: Expected an array, got:", tasks);
+        taskList.innerHTML = '<p>No tasks available.</p>';
+        return;
+    }
+
     const now = new Date();
     const today = now.toISOString().split('T')[0];
 
     const dueToday = [];
     const upcoming = {};
     const byPriority = { High: [], Medium: [], Low: [] };
-    
+
     tasks.forEach(task => {
         const dueDate = task.dueDate ? task.dueDate.split('T')[0] : null;
 
         if (dueDate === today) {
             dueToday.push(task);
-        }
-        
-        else if (dueDate && new Date(dueDate) > now) {
+        } else if (dueDate && new Date(dueDate) > now) {
             if (!upcoming[dueDate]) {
                 upcoming[dueDate] = [];
             }
@@ -310,16 +314,13 @@ async function updateTaskStatus(taskId, newStatus) {
 
         const updatedTask = await response.json();
         
-        // Find and update the specific task's status list
         const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
         const statusList = taskElement.querySelector('.status-list');
         
-        // Get all users involved in the task
         const allUsers = [updatedTask.createdBy, ...updatedTask.assignedTo];
         const uniqueUsers = Array.from(new Set(allUsers.map(user => user._id)))
             .map(id => allUsers.find(user => user._id === id));
 
-        // Update the status list HTML
         const statusListHTML = uniqueUsers.map(user => {
             const status = updatedTask.userStatuses.find(s => s.user._id === user._id)?.status || 'pending';
             return `
@@ -362,13 +363,36 @@ document.getElementById('filter-priority').addEventListener('change', loadTasks)
 document.getElementById('filter-date').addEventListener('change', loadTasks);
 
 async function loadTasks() {
-    const priority = document.getElementById('filter-priority').value;
-    const dueDate = document.getElementById('filter-date').value;
     const token = localStorage.getItem('token');
 
-    const response = await fetch(`/api/tasks?priority=${priority}&dueDate=${dueDate}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-    });
-    const tasks = await response.json();
-    displayTasks(tasks);
+    try {
+        const response = await fetch('/api/tasks', {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch tasks');
+        }
+
+        const taskData = await response.json();
+
+        const allTasks = [
+            ...(taskData.dueToday || []),
+            ...Object.values(taskData.upcoming || {}).flat(),
+            ...Object.values(taskData.byPriority || {}).flat(),
+        ];
+
+        const sortedTasks = allTasks.sort((a, b) => {
+            const dateA = new Date(a.dueDate || '9999-12-31'); // Default far-future date for undefined
+            const dateB = new Date(b.dueDate || '9999-12-31');
+            return dateA - dateB;
+        });
+
+        displayTasks(sortedTasks);
+    } catch (error) {
+        console.error('Error loading tasks:', error);
+        displayTasks([]); 
+    }
 }
+
+
