@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     displayUserName();
     renderNotifications();
+    loadNotifications();
+    setInterval(loadNotifications, 60000);
 });
 
 function displayUserName() {
@@ -402,6 +404,8 @@ async function loadTasks() {
 
 function renderNotifications(notifications) {
     const container = document.getElementById('notifications-list');
+    if (!container) return;
+
     container.innerHTML = notifications.length 
         ? notifications.map(notif => `
             <div class="notification-container ${notif.read ? 'read' : 'unread'}">
@@ -409,7 +413,7 @@ function renderNotifications(notifications) {
                 <small>${new Date(notif.createdAt).toLocaleString()}</small>
             </div>
         `).join('')
-        : '<p>No new notifications</p>';
+        : '<p>No notifications</p>';
 }
 
 function addNotification(message) {

@@ -81,6 +81,21 @@ exports.createTask = async (req, res) => {
         });
 
         const newTask = await task.save();
+
+        // Create notifications for assigned users
+        for (const userId of assignedTo) {
+            const user = await User.findById(userId);
+            if (user) {
+                user.notifications.push({
+                    message: `You have been assigned to a new task: "${title}"`,
+                    taskId: newTask._id,
+                    createdAt: new Date(),
+                    read: false
+                });
+                await user.save();
+            }
+        }
+
         const populatedTask = await Task.findById(newTask._id)
             .populate('assignedTo', 'name email')
             .populate('createdBy', 'name email')
@@ -185,28 +200,44 @@ exports.addComment = async (req, res) => {
         const { taskId } = req.params;  
         const { text } = req.body;      
 
-        // Find the task by its ID
         const task = await Task.findById(taskId);
         if (!task) return res.status(404).json({ message: 'Task not found' });
 
-        // Create a comment object
         const comment = {
             user: req.userId,  
             text: text
         };
 
         task.comments.push(comment);
-
         await task.save();
 
-        const notification = {
-            message: `New comment added to task "${task.title}".`,
-            taskId: task._id,
-            timestamp: new Date().toLocaleString()
-        };
+        // Get all users involved in the task
+        const involvedUsers = new Set([
+            ...task.assignedTo.map(id => id.toString()),
+            task.createdBy.toString()
+        ]);
+        involvedUsers.delete(req.userId.toString()); // Remove current user
 
-        // Return the updated task with populated comments
-        const updatedTask = await Task.findById(taskId).populate('comments.user', 'name email');
+        // Create notifications for all involved users
+        const commentUser = await User.findById(req.userId);
+        for (const userId of involvedUsers) {
+            const user = await User.findById(userId);
+            if (user) {
+                user.notifications.push({
+                    message: `${commentUser.name} commented on task "${task.title}": "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+                    taskId: task._id,
+                    createdAt: new Date(),
+                    read: false
+                });
+                await user.save();
+            }
+        }
+
+        const updatedTask = await Task.findById(taskId)
+            .populate('comments.user', 'name email')
+            .populate('assignedTo', 'name email')
+            .populate('createdBy', 'name email');
+            
         res.status(201).json(updatedTask);
     } catch (error) {
         console.error('Error adding comment:', error);
