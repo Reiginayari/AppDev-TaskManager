@@ -4,9 +4,32 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTasks();
     setupEventListeners();
     displayUserName();
-    renderNotifications();
     loadNotifications();
     setInterval(loadNotifications, 60000);
+
+    // Add notification icon click handler
+    const notificationIcon = document.querySelector('.notification-icon');
+    if (notificationIcon) {
+        notificationIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const container = document.getElementById('notifications-container');
+            if (container) {
+                container.classList.toggle('show');
+                if (container.classList.contains('show')) {
+                    loadNotifications(); // Refresh notifications when opening
+                }
+            }
+        });
+    }
+
+    // Close notifications when clicking outside
+    document.addEventListener('click', (e) => {
+        const container = document.getElementById('notifications-container');
+        const icon = document.querySelector('.notification-icon');
+        if (container && icon && !container.contains(e.target) && !icon.contains(e.target)) {
+            container.classList.remove('show');
+        }
+    });
 });
 
 function displayUserName() {
@@ -89,7 +112,13 @@ function createTaskElement(task) {
             <li class="comment">
                 <div class="comment-header">
                     <span class="commenter-name">${comment.user.name}</span>
-                    <span class="comment-date">${new Date(comment.createdAt).toLocaleString()}</span>
+                    <span class="comment-date">${new Date(comment.createdAt).toLocaleString(undefined, {
+                        year: 'numeric',
+                        month: 'numeric',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}</span>
                 </div>
                 <div class="comment-text">${comment.text}</div>
             </li>
@@ -104,7 +133,13 @@ function createTaskElement(task) {
         <p>${task.description}</p>
         <div class="task-meta">
             <span>Created by: ${task.createdBy.name}</span>
-            <span>Due: ${task.dueDate ? new Date(task.dueDate).toLocaleString() : 'No due date'}</span>
+            <span>Due: ${task.dueDate ? new Date(task.dueDate).toLocaleString(undefined, {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }) : 'No due date'}</span>
         </div>
         <div class="status-section">
             <h4>Task Status:</h4>
@@ -166,7 +201,13 @@ async function addComment(taskId) {
                 <li class="comment">
                     <div class="comment-header">
                         <span class="commenter-name">${comment.user.name}</span>
-                        <span class="comment-date">${new Date(comment.createdAt).toLocaleString()}</span>
+                        <span class="comment-date">${new Date(comment.createdAt).toLocaleString(undefined, {
+                            year: 'numeric',
+                            month: 'numeric',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}</span>
                     </div>
                     <div class="comment-text">${comment.text}</div>
                 </li>
@@ -402,30 +443,44 @@ async function loadTasks() {
     }
 }
 
-function renderNotifications(notifications) {
+function renderNotifications() {
     const container = document.getElementById('notifications-list');
     if (!container) return;
 
-    container.innerHTML = notifications.length 
-        ? notifications.map(notif => `
-            <div class="notification-container ${notif.read ? 'read' : 'unread'}" data-notification-id="${notif._id}">
-                <div class="notification-content">
-                    <p>${notif.message}</p>
-                    <small>${new Date(notif.createdAt).toLocaleString()}</small>
-                </div>
-                <div class="notification-buttons">
-                    ${notif.read 
-                        ? `<button class="mark-unread-btn" onclick="markNotificationAsUnread('${notif._id}')">
-                            Mark as Unread
-                           </button>`
-                        : `<button class="mark-read-btn" onclick="markNotificationAsRead('${notif._id}')">
-                            Mark as Read
-                           </button>`
-                    }
-                </div>
+    if (!notifications || notifications.length === 0) {
+        container.innerHTML = '<p class="no-notifications">No notifications</p>';
+        return;
+    }
+
+    // Sort notifications by date in descending order (newest first)
+    const sortedNotifications = [...notifications].sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    container.innerHTML = sortedNotifications.map(notif => `
+        <div class="notification-container ${notif.read ? 'read' : 'unread'}" data-notification-id="${notif._id}">
+            <div class="notification-content">
+                <p>${notif.message}</p>
+                <small>${new Date(notif.createdAt).toLocaleString(undefined, { 
+                    year: 'numeric', 
+                    month: 'numeric', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}</small>
             </div>
-        `).join('')
-        : '<p>No notifications</p>';
+            <div class="notification-buttons">
+                ${notif.read 
+                    ? `<button class="mark-unread-btn" onclick="markNotificationAsUnread('${notif._id}')">
+                        Mark as Unread
+                       </button>`
+                    : `<button class="mark-read-btn" onclick="markNotificationAsRead('${notif._id}')">
+                        Mark as Read
+                       </button>`
+                }
+            </div>
+        </div>
+    `).join('');
 }
 
 function addNotification(message) {
@@ -445,14 +500,14 @@ async function loadNotifications() {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
+
         if (response.ok) {
-            const notifications = await response.json();
-            // Sort notifications by date, newest first
-            notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            renderNotifications(notifications);
+            notifications = await response.json();
+            renderNotifications();
+            updateNotificationCount();
         }
     } catch (error) {
-        console.error('Error fetching notifications:', error);
+        console.error('Error loading notifications:', error);
     }
 }
 
@@ -548,4 +603,11 @@ async function markAllNotificationsAsUnread() {
     } catch (error) {
         console.error('Error marking all notifications as unread:', error);
     }
+}
+
+function updateNotificationCount() {
+    const unreadCount = notifications.filter(notif => !notif.read).length;
+    const countElement = document.querySelector('.notification-count');
+    countElement.textContent = unreadCount;
+    countElement.style.display = unreadCount > 0 ? 'block' : 'none';
 }
