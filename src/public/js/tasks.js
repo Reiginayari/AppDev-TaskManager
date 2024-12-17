@@ -114,6 +114,28 @@ function createTaskElement(task) {
         </div>
     `).join('');
 
+    // Add this section right after the completion bar
+    const statusButtonsHTML = `
+        <div class="my-status-section">
+            <h4>Update My Status:</h4>
+            <div class="status-buttons">
+                <button onclick="updateTaskStatus('${task._id}', 'pending')" 
+                        class="status-btn ${userStatus === 'pending' ? 'active' : ''}">
+                    Pending
+                </button>
+                <button onclick="updateTaskStatus('${task._id}', 'in-progress')" 
+                        class="status-btn ${userStatus === 'in-progress' ? 'active' : ''}">
+                    In Progress
+                </button>
+                <button onclick="updateTaskStatus('${task._id}', 'completed')" 
+                        class="status-btn ${userStatus === 'completed' ? 'active' : ''}">
+                    Completed
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Insert the status buttons HTML into the task's inner HTML
     div.innerHTML = `
         <div class="task-header">
             <h3>${task.title}</h3>
@@ -124,30 +146,14 @@ function createTaskElement(task) {
             <span>Created by: ${task.createdBy.name}</span>
             <span>Due: ${task.dueDate ? new Date(task.dueDate).toLocaleString() : 'No due date'}</span>
         </div>
+        ${(task.assignedTo.some(u => u._id === currentUserId) || task.createdBy._id === currentUserId) 
+            ? statusButtonsHTML 
+            : ''
+        }
         <div class="completion-bar">
             <div class="completion-progress" style="width: ${completionPercentage}%"></div>
             <span class="completion-text">${completionPercentage}% Complete</span>
         </div>
-        
-        ${(task.assignedTo.some(u => u._id === currentUserId) || task.createdBy._id === currentUserId) ? `
-            <div class="my-status-section">
-                <h4>My Status:</h4>
-                <div class="status-buttons">
-                    <button onclick="updateTaskStatus('${task._id}', 'pending')" 
-                            class="status-btn ${userStatus === 'pending' ? 'active' : ''}">
-                        Pending
-                    </button>
-                    <button onclick="updateTaskStatus('${task._id}', 'in-progress')" 
-                            class="status-btn ${userStatus === 'in-progress' ? 'active' : ''}">
-                        In Progress
-                    </button>
-                    <button onclick="updateTaskStatus('${task._id}', 'completed')" 
-                            class="status-btn ${userStatus === 'completed' ? 'active' : ''}">
-                        Completed
-                    </button>
-                </div>
-            </div>
-        ` : ''}
         
         <div class="status-section">
             <h4>All Users Status:</h4>
@@ -249,39 +255,45 @@ function setupEventListeners() {
 
 async function loadTasks() {
     const token = localStorage.getItem('token');
-    const priorityFilter = document.getElementById('filter-priority').value;
-    const dateFilter = document.getElementById('filter-date').value;
-    const searchTerm = document.getElementById('task-search').value.trim();
-
     try {
+        let url = '/api/tasks';
         const params = new URLSearchParams();
-        
+
+        // Get filter values
+        const priorityFilter = document.getElementById('filter-priority').value;
+        const dateFilter = document.getElementById('filter-date').value;
+        const searchTerm = document.getElementById('task-search').value;
+
         if (priorityFilter && priorityFilter !== 'all') {
             params.append('priority', priorityFilter);
         }
         if (dateFilter) {
+            // Don't add a day to the date filter, send it as is
             params.append('dueDate', dateFilter);
         }
         if (searchTerm) {
             params.append('search', searchTerm);
         }
 
-        const response = await fetch(`/api/tasks?${params.toString()}`, {
-            headers: { 
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json'
+        if (params.toString()) {
+            url += `?${params.toString()}`;
+        }
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`
             }
         });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch tasks');
+            throw new Error('Failed to load tasks');
         }
 
-        const taskData = await response.json();
-        displayTasks(taskData);
+        const tasks = await response.json();
+        displayTasks(tasks);
     } catch (error) {
         console.error('Error loading tasks:', error);
-        displayTasks({ dueToday: [], upcoming: {}, byPriority: {} });
+        displayTasks({ dueToday: [], upcoming: {} });
     }
 }
 
@@ -297,7 +309,6 @@ async function displayTasks(taskData) {
     // Display Due Today tasks
     if (taskData.dueToday && taskData.dueToday.length > 0) {
         taskList.innerHTML += `<h2 class="task-group-header">Due Today</h2>`;
-        // Sort by priority within due today
         taskData.dueToday.forEach(task => {
             const taskElement = createTaskElement(task);
             taskList.appendChild(taskElement);
@@ -309,7 +320,17 @@ async function displayTasks(taskData) {
         Object.keys(taskData.upcoming)
             .sort((a, b) => new Date(a) - new Date(b))
             .forEach(date => {
-                taskList.innerHTML += `<h2 class="task-group-header">Due: ${new Date(date).toLocaleDateString()}</h2>`;
+                // Add one day to match the actual due date
+                const displayDate = new Date(date);
+                displayDate.setDate(displayDate.getDate() + 1);
+                
+                const formattedDate = displayDate.toLocaleDateString(undefined, {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                taskList.innerHTML += `<h2 class="task-group-header">Due: ${formattedDate}</h2>`;
                 taskData.upcoming[date].forEach(task => {
                     const taskElement = createTaskElement(task);
                     taskList.appendChild(taskElement);
@@ -370,31 +391,17 @@ async function updateTaskStatus(taskId, newStatus) {
         // Get the task element and its components
         const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
         const statusList = taskElement.querySelector('.status-list');
-        const myStatusBadge = taskElement.querySelector('.current-status');
         
         // Update the status list
-        const allUsers = [updatedTask.createdBy, ...updatedTask.assignedTo];
-        const uniqueUsers = Array.from(new Set(allUsers.map(user => user._id)))
-            .map(id => allUsers.find(user => user._id === id));
-
-        const statusListHTML = uniqueUsers.map(user => {
-            const status = updatedTask.userStatuses.find(s => s.user._id === user._id)?.status || 'pending';
-            return `
-                <div class="user-status">
-                    <span class="user-name">${user.name}</span>
-                    <span class="status-badge ${status}">${status}</span>
-                </div>
-            `;
-        }).join('');
+        const statusListHTML = updatedTask.userStatuses.map(status => `
+            <div class="user-status">
+                <span class="user-name">${status.user.name}</span>
+                <span class="status-badge ${status.status}">${status.status}</span>
+            </div>
+        `).join('');
         
         // Update UI elements
         statusList.innerHTML = statusListHTML;
-        
-        // Update my status badge
-        if (myStatusBadge) {
-            myStatusBadge.className = `current-status status-badge ${newStatus}`;
-            myStatusBadge.textContent = newStatus;
-        }
 
         // Update completion percentage
         const completionPercentage = Math.round((updatedTask.userStatuses.filter(s => s.status === 'completed').length / updatedTask.userStatuses.length) * 100);
@@ -407,6 +414,17 @@ async function updateTaskStatus(taskId, newStatus) {
         if (completionText) {
             completionText.textContent = `${completionPercentage}% Complete`;
         }
+
+        // Update status buttons
+        const statusButtons = taskElement.querySelectorAll('.status-btn');
+        statusButtons.forEach(button => {
+            const buttonStatus = button.textContent.toLowerCase().trim();
+            if (buttonStatus === newStatus) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
 
     } catch (error) {
         console.error('Error updating task status:', error);

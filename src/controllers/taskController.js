@@ -6,6 +6,7 @@ exports.getAllTasks = async (req, res) => {
     try {
         const searchTerm = req.query.search;
         const dateFilter = req.query.dueDate;
+        const priorityFilter = req.query.priority;
 
         let query = {
             $or: [
@@ -31,6 +32,10 @@ exports.getAllTasks = async (req, res) => {
                 $gte: filterDate,
                 $lt: nextDay
             };
+        }
+
+        if (priorityFilter && priorityFilter !== 'all') {
+            query.priority = priorityFilter;
         }
 
         const tasks = await Task.find(query)
