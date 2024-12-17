@@ -4,6 +4,7 @@ const User = require('../models/User');
 exports.getAllTasks = async (req, res) => {
     try {
         const { priority, dueDate } = req.query;
+        
         const filter = {
             $or: [
                 { createdBy: req.userId },
@@ -21,7 +22,37 @@ exports.getAllTasks = async (req, res) => {
             .populate('comments.user', 'name email')
             .sort('-createdAt');
 
-        res.json(tasks);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const dueToday = [];
+            const upcoming = {};
+            const byPriority = { High: [], Medium: [], Low: [] };
+
+            tasks.forEach(task => {
+                if (task.dueDate && new Date(task.dueDate).toDateString() === today.toDateString()) {
+                    dueToday.push(task);
+                }
+    
+                const taskDueDate = new Date(task.dueDate);
+                const daysDiff = Math.ceil((taskDueDate - today) / (1000 * 60 * 60 * 24));
+                if (task.dueDate && daysDiff > 0 && daysDiff <= 7) {
+                    const formattedDate = taskDueDate.toDateString(); // e.g., "Wed Dec 19"
+                    if (!upcoming[formattedDate]) upcoming[formattedDate] = [];
+                    upcoming[formattedDate].push(task);
+                }
+    
+                if (task.priority === 'High') byPriority.High.push(task);
+                else if (task.priority === 'Medium') byPriority.Medium.push(task);
+                else if (task.priority === 'Low') byPriority.Low.push(task);
+            });
+    
+            res.json({
+                dueToday,
+                upcoming,
+                byPriority
+            });
+            
     } catch (error) {
         console.error('Error in getAllTasks:', error);
         res.status(500).json({ message: error.message });

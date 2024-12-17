@@ -212,9 +212,58 @@ function displayTasks(tasks) {
     const taskList = document.getElementById('task-list');
     taskList.innerHTML = '';
 
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+
+    const dueToday = [];
+    const upcoming = {};
+    const byPriority = { High: [], Medium: [], Low: [] };
+    
     tasks.forEach(task => {
-        const taskElement = createTaskElement(task);
-        taskList.appendChild(taskElement);
+        const dueDate = task.dueDate ? task.dueDate.split('T')[0] : null;
+
+        if (dueDate === today) {
+            dueToday.push(task);
+        }
+        
+        else if (dueDate && new Date(dueDate) > now) {
+            if (!upcoming[dueDate]) {
+                upcoming[dueDate] = [];
+            }
+            upcoming[dueDate].push(task);
+        }
+
+        if (task.priority && byPriority[task.priority]) {
+            byPriority[task.priority].push(task);
+        }
+    });
+
+    if (dueToday.length > 0) {
+        taskList.innerHTML += `<h2 class="task-group-header">Due Today</h2>`;
+        dueToday.forEach(task => {
+            const taskElement = createTaskElement(task);
+            taskList.appendChild(taskElement);
+        });
+    }
+
+    const sortedDates = Object.keys(upcoming).sort((a, b) => new Date(a) - new Date(b));
+    sortedDates.forEach(date => {
+        taskList.innerHTML += `<h2 class="task-group-header">Upcoming: ${date}</h2>`;
+        upcoming[date].forEach(task => {
+            const taskElement = createTaskElement(task);
+            taskList.appendChild(taskElement);
+        });
+    });
+
+    taskList.innerHTML += `<h2 class="task-group-header">By Priority</h2>`;
+    Object.keys(byPriority).forEach(priority => {
+        if (byPriority[priority].length > 0) {
+            taskList.innerHTML += `<h3 class="priority-group-header">${priority} Priority</h3>`;
+            byPriority[priority].forEach(task => {
+                const taskElement = createTaskElement(task);
+                taskList.appendChild(taskElement);
+            });
+        }
     });
 }
 

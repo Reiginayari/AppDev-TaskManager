@@ -638,3 +638,17 @@ button:hover {
 .status-select:hover {
     border-color: #1e90ff;
 }
+
+.task-group-header {
+    font-size: 1.5em;
+    margin-top: 1.5rem;
+    color: #333;
+    border-bottom: 1px solid #ccc;
+}
+
+.priority-group-header {
+    font-size: 1.2em;
+    margin-top: 1rem;
+    color: #555;
+}
+
