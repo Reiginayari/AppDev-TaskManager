@@ -400,14 +400,16 @@ async function loadTasks() {
     }
 }
 
-function renderNotifications() {
-    const notificationsList = document.getElementById('notifications-list');
-    notificationsList.innerHTML = notifications.map(notification => `
-        <div class="notification">
-            <span class="notification-message">${notification.message}</span>
-            <span class="notification-time">${new Date(notification.time).toLocaleString()}</span>
-        </div>
-    `).join('');
+function renderNotifications(notifications) {
+    const container = document.getElementById('notifications-list');
+    container.innerHTML = notifications.length 
+        ? notifications.map(notif => `
+            <div class="notification-container ${notif.read ? 'read' : 'unread'}">
+                <p>${notif.message}</p>
+                <small>${new Date(notif.createdAt).toLocaleString()}</small>
+            </div>
+        `).join('')
+        : '<p>No new notifications</p>';
 }
 
 function addNotification(message) {
@@ -420,3 +422,28 @@ function addNotification(message) {
     renderNotifications();  
 }
 
+async function loadNotifications() {
+    try {
+        const response = await fetch('/api/users/notifications', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        if (response.ok) {
+            const notifications = await response.json();
+            renderNotifications(notifications);
+        }
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+    }
+}
+
+async function markNotificationsAsRead() {
+    await fetch('/api/users/notifications/read', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
+    loadNotifications();
+}
+
+document.addEventListener('DOMContentLoaded', loadNotifications);
