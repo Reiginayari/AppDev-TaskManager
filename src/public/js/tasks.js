@@ -184,7 +184,7 @@ function createTaskElement(task) {
 
 async function addComment(taskId) {
     const commentText = document.getElementById(`comment-input-${taskId}`).value;
-    if (!commentText.trim()) return; // Don't submit empty comments
+    if (!commentText.trim()) return;
     
     const token = localStorage.getItem('token');
     
@@ -201,25 +201,25 @@ async function addComment(taskId) {
         if (response.ok) {
             const updatedTask = await response.json();
             
-            // Update only the comments section of this specific task
-            const commentsList = document.getElementById(`comment-list-${taskId}`);
-            const commentsHTML = updatedTask.comments.map(comment => `
-                <li class="comment">
-                    <div class="comment-header">
-                        <span class="commenter-name">${comment.user.name}</span>
-                        <span class="comment-date">${new Date(comment.createdAt).toLocaleString(undefined, {
-                            year: 'numeric',
-                            month: 'numeric',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })}</span>
-                    </div>
-                    <div class="comment-text">${comment.text}</div>
-                </li>
-            `).join('');
+            // Find the correct task element and update its comments
+            const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+            const commentsList = taskElement.querySelector('.comment-list');
             
-            commentsList.innerHTML = commentsHTML;
+            const commentsHTML = updatedTask.comments.map(comment => {
+                const userName = comment.user ? comment.user.name : 'Unknown User';
+                const commentDate = new Date(comment.createdAt).toLocaleString();
+                return `
+                    <li class="comment">
+                        <div class="comment-header">
+                            <span class="commenter-name">${userName}</span>
+                            <span class="comment-date">${commentDate}</span>
+                        </div>
+                        <div class="comment-text">${comment.text}</div>
+                    </li>
+                `;
+            }).join('');
+            
+            commentsList.innerHTML = commentsHTML || '<li>No comments yet</li>';
             
             // Clear the input field
             document.getElementById(`comment-input-${taskId}`).value = '';
