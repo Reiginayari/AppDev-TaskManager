@@ -1,6 +1,6 @@
 const Task = require('../models/Task');
 const User = require('../models/User');
-const { io } = require('../app');
+const { getIO } = require('../config/socket');
 
 exports.getAllTasks = async (req, res) => {
     try {
@@ -97,32 +97,16 @@ exports.updateTask = async (req, res) => {
         const task = await Task.findById(req.params.id);
         if (!task) return res.status(404).json({ message: 'Task not found' });
 
-        const updates = req.body;
-        Object.assign(task, updates);
+        Object.assign(task, req.body);
         await task.save();
 
-       // Emit notification via Socket.io to all connected users
-       const notification = {
-        message: `Task "${task.title}" has been updated.`,
-        taskId: task._id,
-        timestamp: new Date().toLocaleString()
-        };
-
-        io.emit('notification', notification); 
-
-        // Save notifications to each assigned user
-        const notifications = task.assignedTo.map(userId => ({
-            userId,
-            message: notification.message,
+        // Emit notification via Socket.IO
+        const io = getIO();
+        io.emit('notification', {
+            message: `Task "${task.title}" has been updated.`,
             taskId: task._id,
-        }));
-
-        // Save notifications to each user
-        await Promise.all(notifications.map(async (notification) => {
-            const user = await User.findById(notification.userId);
-            user.notifications.push(notification);
-            await user.save();
-        }));
+            timestamp: new Date().toLocaleString()
+        });
 
         res.json(task);
     } catch (error) {
