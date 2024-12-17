@@ -13,8 +13,22 @@ exports.getAllTasks = async (req, res) => {
             ]
         };
 
-        if (priority && priority !== 'all') filter.priority = priority;
-        if (dueDate) filter.dueDate = { $lte: new Date(dueDate) };
+        if (priority && priority !== 'all') {
+            filter.priority = priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase();
+        }
+
+        if (dueDate) {
+            const selectedDate = new Date(dueDate);
+            selectedDate.setHours(23, 59, 59, 999);
+            
+            const startDate = new Date(dueDate);
+            startDate.setHours(0, 0, 0, 0);
+            
+            filter.dueDate = {
+                $gte: startDate,
+                $lte: selectedDate
+            };
+        }
 
         const tasks = await Task.find(filter)
             .populate('assignedTo', 'name email')
@@ -23,37 +37,55 @@ exports.getAllTasks = async (req, res) => {
             .populate('comments.user', 'name email')
             .sort('-createdAt');
 
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-            const dueToday = [];
-            const upcoming = {};
-            const byPriority = { High: [], Medium: [], Low: [] };
+        const dueToday = [];
+        const upcoming = {};
+        const byPriority = { High: [], Medium: [], Low: [] };
 
+        // If priority filter is active, only show tasks in byPriority
+        if (priority && priority !== 'all') {
             tasks.forEach(task => {
-                if (task.dueDate && new Date(task.dueDate).toDateString() === today.toDateString()) {
-                    dueToday.push(task);
+                if (task.priority === filter.priority) {
+                    byPriority[task.priority].push(task);
                 }
-    
+            });
+
+            return res.json({
+                dueToday: [],
+                upcoming: {},
+                byPriority
+            });
+        }
+
+        // Normal categorization for no priority filter
+        tasks.forEach(task => {
+            if (task.dueDate && new Date(task.dueDate).toDateString() === today.toDateString()) {
+                dueToday.push(task);
+            }
+
+            if (task.dueDate) {
                 const taskDueDate = new Date(task.dueDate);
                 const daysDiff = Math.ceil((taskDueDate - today) / (1000 * 60 * 60 * 24));
-                if (task.dueDate && daysDiff > 0 && daysDiff <= 7) {
-                    const formattedDate = taskDueDate.toDateString(); // e.g., "Wed Dec 19"
+                if (daysDiff > 0 && daysDiff <= 7) {
+                    const formattedDate = taskDueDate.toDateString();
                     if (!upcoming[formattedDate]) upcoming[formattedDate] = [];
                     upcoming[formattedDate].push(task);
                 }
-    
-                if (task.priority === 'High') byPriority.High.push(task);
-                else if (task.priority === 'Medium') byPriority.Medium.push(task);
-                else if (task.priority === 'Low') byPriority.Low.push(task);
-            });
-    
-            res.json({
-                dueToday,
-                upcoming,
-                byPriority
-            });
-            
+            }
+
+            const taskPriority = task.priority || 'Low';
+            if (byPriority[taskPriority]) {
+                byPriority[taskPriority].push(task);
+            }
+        });
+
+        res.json({
+            dueToday,
+            upcoming,
+            byPriority
+        });
     } catch (error) {
         console.error('Error in getAllTasks:', error);
         res.status(500).json({ message: error.message });

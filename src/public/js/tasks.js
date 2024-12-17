@@ -242,81 +242,82 @@ function setupEventListeners() {
 }
 
 async function loadTasks() {
+    const token = localStorage.getItem('token');
+    const priorityFilter = document.getElementById('filter-priority').value;
+    const dateFilter = document.getElementById('filter-date').value;
+
     try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('/api/tasks', {
-            headers: {
-                'Authorization': `Bearer ${token}`
+        let url = '/api/tasks?';
+        const params = new URLSearchParams();
+        
+        if (priorityFilter && priorityFilter !== 'all') {
+            params.append('priority', priorityFilter.charAt(0).toUpperCase() + priorityFilter.slice(1));
+        }
+        if (dateFilter) {
+            params.append('dueDate', dateFilter);
+        }
+
+        const response = await fetch(`/api/tasks?${params.toString()}`, {
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
             }
         });
-        const tasks = await response.json();
-        displayTasks(tasks);
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch tasks');
+        }
+
+        const taskData = await response.json();
+        displayTasks(taskData);
     } catch (error) {
         console.error('Error loading tasks:', error);
+        displayTasks({ dueToday: [], upcoming: {}, byPriority: {} });
     }
 }
 
-function displayTasks(tasks) {
+function displayTasks(taskData) {
     const taskList = document.getElementById('task-list');
     taskList.innerHTML = '';
 
-    if (!Array.isArray(tasks)) {
-        console.error("displayTasks: Expected an array, got:", tasks);
+    if (!taskData || (!taskData.dueToday && !taskData.upcoming && !taskData.byPriority)) {
         taskList.innerHTML = '<p>No tasks available.</p>';
         return;
     }
 
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
-
-    const dueToday = [];
-    const upcoming = {};
-    const byPriority = { High: [], Medium: [], Low: [] };
-
-    tasks.forEach(task => {
-        const dueDate = task.dueDate ? task.dueDate.split('T')[0] : null;
-
-        if (dueDate === today) {
-            dueToday.push(task);
-        } else if (dueDate && new Date(dueDate) > now) {
-            if (!upcoming[dueDate]) {
-                upcoming[dueDate] = [];
-            }
-            upcoming[dueDate].push(task);
-        }
-
-        if (task.priority && byPriority[task.priority]) {
-            byPriority[task.priority].push(task);
-        }
-    });
-
-    if (dueToday.length > 0) {
+    // Display Due Today tasks
+    if (taskData.dueToday && taskData.dueToday.length > 0) {
         taskList.innerHTML += `<h2 class="task-group-header">Due Today</h2>`;
-        dueToday.forEach(task => {
+        taskData.dueToday.forEach(task => {
             const taskElement = createTaskElement(task);
             taskList.appendChild(taskElement);
         });
     }
 
-    const sortedDates = Object.keys(upcoming).sort((a, b) => new Date(a) - new Date(b));
-    sortedDates.forEach(date => {
-        taskList.innerHTML += `<h2 class="task-group-header">Upcoming: ${date}</h2>`;
-        upcoming[date].forEach(task => {
-            const taskElement = createTaskElement(task);
-            taskList.appendChild(taskElement);
-        });
-    });
-
-    taskList.innerHTML += `<h2 class="task-group-header">By Priority</h2>`;
-    Object.keys(byPriority).forEach(priority => {
-        if (byPriority[priority].length > 0) {
-            taskList.innerHTML += `<h3 class="priority-group-header">${priority} Priority</h3>`;
-            byPriority[priority].forEach(task => {
+    // Display Upcoming tasks
+    if (taskData.upcoming) {
+        Object.keys(taskData.upcoming).sort((a, b) => new Date(a) - new Date(b)).forEach(date => {
+            taskList.innerHTML += `<h2 class="task-group-header">Upcoming: ${date}</h2>`;
+            taskData.upcoming[date].forEach(task => {
                 const taskElement = createTaskElement(task);
                 taskList.appendChild(taskElement);
             });
-        }
-    });
+        });
+    }
+
+    // Display tasks by Priority
+    if (taskData.byPriority) {
+        taskList.innerHTML += `<h2 class="task-group-header">By Priority</h2>`;
+        ['High', 'Medium', 'Low'].forEach(priority => {
+            if (taskData.byPriority[priority] && taskData.byPriority[priority].length > 0) {
+                taskList.innerHTML += `<h3 class="priority-group-header">${priority} Priority</h3>`;
+                taskData.byPriority[priority].forEach(task => {
+                    const taskElement = createTaskElement(task);
+                    taskList.appendChild(taskElement);
+                });
+            }
+        });
+    }
 }
 
 async function loadCoTaskers() {
@@ -409,39 +410,6 @@ async function deleteTask(taskId) {
 
 document.getElementById('filter-priority').addEventListener('change', loadTasks);
 document.getElementById('filter-date').addEventListener('change', loadTasks);
-
-async function loadTasks() {
-    const token = localStorage.getItem('token');
-
-    try {
-        const response = await fetch('/api/tasks', {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch tasks');
-        }
-
-        const taskData = await response.json();
-
-        const allTasks = [
-            ...(taskData.dueToday || []),
-            ...Object.values(taskData.upcoming || {}).flat(),
-            ...Object.values(taskData.byPriority || {}).flat(),
-        ];
-
-        const sortedTasks = allTasks.sort((a, b) => {
-            const dateA = new Date(a.dueDate || '9999-12-31'); // Default far-future date for undefined
-            const dateB = new Date(b.dueDate || '9999-12-31');
-            return dateA - dateB;
-        });
-
-        displayTasks(sortedTasks);
-    } catch (error) {
-        console.error('Error loading tasks:', error);
-        displayTasks([]); 
-    }
-}
 
 function renderNotifications() {
     const container = document.getElementById('notifications-list');
