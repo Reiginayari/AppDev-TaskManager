@@ -8,23 +8,17 @@ exports.getAllTasks = async (req, res) => {
         const dateFilter = req.query.dueDate;
 
         let query = {
-            $and: [
-                {
-                    $or: [
-                        { createdBy: req.userId },
-                        { assignedTo: req.userId }
-                    ]
-                }
+            $or: [
+                { createdBy: req.userId },
+                { assignedTo: req.userId }
             ]
         };
 
         if (searchTerm) {
-            query.$and.push({
-                $or: [
-                    { title: { $regex: searchTerm, $options: 'i' } },
-                    { description: { $regex: searchTerm, $options: 'i' } }
-                ]
-            });
+            query.$or.push(
+                { title: { $regex: searchTerm, $options: 'i' } },
+                { description: { $regex: searchTerm, $options: 'i' } }
+            );
         }
 
         if (dateFilter) {
@@ -33,12 +27,10 @@ exports.getAllTasks = async (req, res) => {
             const nextDay = new Date(filterDate);
             nextDay.setDate(nextDay.getDate() + 1);
             
-            query.$and.push({
-                dueDate: {
-                    $gte: filterDate,
-                    $lt: nextDay
-                }
-            });
+            query.dueDate = {
+                $gte: filterDate,
+                $lt: nextDay
+            };
         }
 
         const tasks = await Task.find(query)

@@ -634,7 +634,112 @@ button:hover {
 }
 
 .my-status {
-    margin-top: 10px;
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.my-status h4 {
+    margin-bottom: 10px;
+    color: #495057;
+}
+
+.status-button-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.status-update-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #e9ecef;
+    color: #495057;
+    flex: 1;
+}
+
+.status-update-btn:hover {
+    background-color: #dee2e6;
+}
+
+.status-update-btn.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.status-update-btn.active:hover {
+    background-color: #0056b3;
+}
+
+.status-select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    cursor: pointer;
+}
+
+.status-select:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.status-select option {
+    padding: 8px;
+}
+
+.task-status {
+    margin: 15px 0;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.status-list {
+    margin: 10px 0;
+}
+
+.user-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    margin: 5px 0;
+    background: white;
+    border-radius: 4px;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.9em;
+}
+
+.status-badge.pending {
+    background: #ffd700;
+    color: #000;
+}
+
+.status-badge.in-progress {
+    background: #1e90ff;
+    color: white;
+}
+
+.status-badge.completed {
+    background: #32cd32;
+    color: white;
+}
+
+.my-status {
+    margin-top: 15px;
     padding: 10px;
     background-color: #f8f9fa;
     border-radius: 4px;
@@ -1098,5 +1203,122 @@ button:hover {
     padding: 4px 8px;
     border-radius: 4px;
     border: 1px solid #ddd;
+}
+
+.status-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.status-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.status-btn {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.status-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.status-btn.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #0056b3;
+}
+
+.status-btn.active:hover {
+    background-color: #0056b3;
+}
+
+.my-status-section {
+    margin: 15px 0;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+}
+
+.my-status-section h4 {
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.status-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.status-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.status-btn:hover {
+    background-color: #dee2e6;
+    transform: translateY(-2px);
+}
+
+.status-btn.active {
+    background-color: #007bff;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.status-btn.active:hover {
+    background-color: #0056b3;
+}
+
+.status-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.status-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.status-btn:hover {
+    background-color: #dee2e6;
+    transform: translateY(-2px);
+}
+
+.status-btn.active {
+    background-color: #007bff;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.status-btn.active:hover {
+    background-color: #0056b3;
 }
 

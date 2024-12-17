@@ -106,34 +106,13 @@ function createTaskElement(task) {
     const completedUsers = task.userStatuses.filter(s => s.status === 'completed').length;
     const completionPercentage = totalUsers > 0 ? Math.round((completedUsers / totalUsers) * 100) : 0;
 
-    // Get all users involved in the task
-    const allUsers = [task.createdBy, ...task.assignedTo];
-    const uniqueUsers = Array.from(new Set(allUsers.map(user => user._id)))
-        .map(id => allUsers.find(user => user._id === id));
-
     // Create status list for all users
-    const statusListHTML = uniqueUsers.map(user => {
-        const status = task.userStatuses.find(s => s.user._id === user._id)?.status || 'pending';
-        return `
-            <div class="user-status">
-                <span class="user-name">${user.name}</span>
-                <span class="status-badge ${status}">${status}</span>
-            </div>
-        `;
-    }).join('');
-
-    // Format comments
-    const commentsHTML = task.comments && task.comments.length > 0 
-        ? task.comments.map(comment => `
-            <li class="comment">
-                <div class="comment-header">
-                    <span class="commenter-name">${comment.user.name}</span>
-                    <span class="comment-date">${new Date(comment.createdAt).toLocaleString()}</span>
-                </div>
-                <div class="comment-text">${comment.text}</div>
-            </li>
-        `).join('')
-        : '<li>No comments yet</li>';
+    const statusListHTML = task.userStatuses.map(status => `
+        <div class="user-status">
+            <span class="user-name">${status.user.name}</span>
+            <span class="status-badge ${status.status}">${status.status}</span>
+        </div>
+    `).join('');
 
     div.innerHTML = `
         <div class="task-header">
@@ -149,27 +128,49 @@ function createTaskElement(task) {
             <div class="completion-progress" style="width: ${completionPercentage}%"></div>
             <span class="completion-text">${completionPercentage}% Complete</span>
         </div>
+        
+        ${(task.assignedTo.some(u => u._id === currentUserId) || task.createdBy._id === currentUserId) ? `
+            <div class="my-status-section">
+                <h4>My Status:</h4>
+                <div class="status-buttons">
+                    <button onclick="updateTaskStatus('${task._id}', 'pending')" 
+                            class="status-btn ${userStatus === 'pending' ? 'active' : ''}">
+                        Pending
+                    </button>
+                    <button onclick="updateTaskStatus('${task._id}', 'in-progress')" 
+                            class="status-btn ${userStatus === 'in-progress' ? 'active' : ''}">
+                        In Progress
+                    </button>
+                    <button onclick="updateTaskStatus('${task._id}', 'completed')" 
+                            class="status-btn ${userStatus === 'completed' ? 'active' : ''}">
+                        Completed
+                    </button>
+                </div>
+            </div>
+        ` : ''}
+        
         <div class="status-section">
-            <h4>Task Status:</h4>
+            <h4>All Users Status:</h4>
             <div class="status-list">
                 ${statusListHTML}
             </div>
-            ${(task.assignedTo.some(u => u._id === currentUserId) || task.createdBy._id === currentUserId) ? `
-                <div class="my-status">
-                    <label>My Status:</label>
-                    <select class="status-select" onchange="updateTaskStatus('${task._id}', this.value)">
-                        <option value="">Change Status</option>
-                        <option value="pending" ${userStatus === 'pending' ? 'selected' : ''}>Pending</option>
-                        <option value="in-progress" ${userStatus === 'in-progress' ? 'selected' : ''}>In Progress</option>
-                        <option value="completed" ${userStatus === 'completed' ? 'selected' : ''}>Completed</option>
-                    </select>
-                </div>
-            ` : ''}
         </div>
+        
         <div class="comments-section">
             <h4>Comments:</h4>
             <ul class="comment-list">
-                ${commentsHTML}
+                ${task.comments && task.comments.length > 0 
+                    ? task.comments.map(comment => `
+                        <li class="comment">
+                            <div class="comment-header">
+                                <span class="commenter-name">${comment.user.name}</span>
+                                <span class="comment-date">${new Date(comment.createdAt).toLocaleString()}</span>
+                            </div>
+                            <div class="comment-text">${comment.text}</div>
+                        </li>
+                    `).join('')
+                    : '<li>No comments yet</li>'
+                }
             </ul>
             <div class="comment-input-container">
                 <textarea placeholder="Add a comment..." id="comment-input-${task._id}"></textarea>
