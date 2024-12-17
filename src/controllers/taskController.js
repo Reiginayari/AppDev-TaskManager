@@ -1,6 +1,6 @@
 const Task = require('../models/Task');
 const User = require('../models/User');
-const { io } = require('../app');
+const socket = require('../config/socket');
 
 exports.getAllTasks = async (req, res) => {
     try {
@@ -108,7 +108,7 @@ exports.updateTask = async (req, res) => {
         timestamp: new Date().toLocaleString()
         };
 
-        io.emit('notification', notification); 
+        socket.getIO().emit('notification', notification); 
 
         // Save notifications to each assigned user
         const notifications = task.assignedTo.map(userId => ({
@@ -181,7 +181,7 @@ exports.updateTaskStatus = async (req, res) => {
             timestamp: new Date().toLocaleString()
         };
         
-        io.emit('notification', notification);
+        socket.getIO().emit('notification', notification);
 
         await task.save();
 

@@ -6,11 +6,11 @@ const expressLayouts = require('express-ejs-layouts');
 const connectDB = require('./src/config/db');
 require('dotenv').config();
 const http = require('http');
-const socketIo = require('socket.io');
+const socket = require('./src/config/socket');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socket.init(server);
 
 // View engine setup
 app.set('view engine', 'ejs');
