@@ -138,3 +138,40 @@ exports.removeCoTasker = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+exports.markNotificationAsRead = async (req, res) => {
+    try {
+        const { notificationId } = req.params;
+        const user = await User.findById(req.userId);
+        
+        const notification = user.notifications.id(notificationId);
+        if (!notification) {
+            return res.status(404).json({ message: 'Notification not found' });
+        }
+
+        notification.read = true;
+        await user.save();
+
+        res.json({ message: 'Notification marked as read' });
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+exports.markAllNotificationsAsRead = async (req, res) => {
+    try {
+        const user = await User.findById(req.userId);
+        
+        user.notifications.forEach(notification => {
+            notification.read = true;
+        });
+        
+        await user.save();
+        
+        res.json({ message: 'All notifications marked as read' });
+    } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};

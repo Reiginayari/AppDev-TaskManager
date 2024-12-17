@@ -408,9 +408,21 @@ function renderNotifications(notifications) {
 
     container.innerHTML = notifications.length 
         ? notifications.map(notif => `
-            <div class="notification-container ${notif.read ? 'read' : 'unread'}">
-                <p>${notif.message}</p>
-                <small>${new Date(notif.createdAt).toLocaleString()}</small>
+            <div class="notification-container ${notif.read ? 'read' : 'unread'}" data-notification-id="${notif._id}">
+                <div class="notification-content">
+                    <p>${notif.message}</p>
+                    <small>${new Date(notif.createdAt).toLocaleString()}</small>
+                </div>
+                <div class="notification-buttons">
+                    ${notif.read 
+                        ? `<button class="mark-unread-btn" onclick="markNotificationAsUnread('${notif._id}')">
+                            Mark as Unread
+                           </button>`
+                        : `<button class="mark-read-btn" onclick="markNotificationAsRead('${notif._id}')">
+                            Mark as Read
+                           </button>`
+                    }
+                </div>
             </div>
         `).join('')
         : '<p>No notifications</p>';
@@ -435,6 +447,8 @@ async function loadNotifications() {
         });
         if (response.ok) {
             const notifications = await response.json();
+            // Sort notifications by date, newest first
+            notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             renderNotifications(notifications);
         }
     } catch (error) {
@@ -442,12 +456,96 @@ async function loadNotifications() {
     }
 }
 
-async function markNotificationsAsRead() {
-    await fetch('/api/users/notifications/read', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-    });
-    loadNotifications();
+async function markNotificationAsRead(notificationId) {
+    try {
+        const response = await fetch(`/api/users/notifications/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (response.ok) {
+            const notifElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
+            if (notifElement) {
+                notifElement.classList.remove('unread');
+                notifElement.classList.add('read');
+                const buttonContainer = notifElement.querySelector('.notification-buttons');
+                buttonContainer.innerHTML = `
+                    <button class="mark-unread-btn" onclick="markNotificationAsUnread('${notificationId}')">
+                        Mark as Unread
+                    </button>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+    }
+}
+
+async function markAllNotificationsAsRead() {
+    try {
+        const response = await fetch('/api/users/notifications/read-all', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (response.ok) {
+            // Reload notifications to show updated state
+            loadNotifications();
+        }
+    } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', loadNotifications);
+
+async function markNotificationAsUnread(notificationId) {
+    try {
+        const response = await fetch(`/api/users/notifications/${notificationId}/unread`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (response.ok) {
+            // Update the UI immediately
+            const notifElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
+            if (notifElement) {
+                notifElement.classList.remove('read');
+                notifElement.classList.add('unread');
+                // Replace the button
+                const buttonContainer = notifElement.querySelector('.notification-buttons');
+                buttonContainer.innerHTML = `
+                    <button class="mark-read-btn" onclick="markNotificationAsRead('${notificationId}')">
+                        Mark as Read
+                    </button>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Error marking notification as unread:', error);
+    }
+}
+
+async function markAllNotificationsAsUnread() {
+    try {
+        const response = await fetch('/api/users/notifications/unread-all', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (response.ok) {
+            // Reload notifications to show updated state
+            loadNotifications();
+        }
+    } catch (error) {
+        console.error('Error marking all notifications as unread:', error);
+    }
+}

@@ -652,3 +652,222 @@ button:hover {
     color: #555;
 }
 
+.notification-container {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.notification-content {
+    flex-grow: 1;
+}
+
+.notification-container.read {
+    background-color: #f5f5f5;
+    color: #666;
+}
+
+.notification-container.unread {
+    background-color: #fff;
+    font-weight: 500;
+}
+
+.mark-read-btn {
+    padding: 4px 8px;
+    background-color: #e0e0e0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.mark-read-btn:hover {
+    background-color: #d0d0d0;
+}
+
+/* Notifications Container */
+#notifications-container {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#notifications-container h4 {
+    margin: 0 0 15px 0;
+    color: #343a40;
+    font-size: 1.1rem;
+}
+
+#notifications-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-container {
+    position: relative;
+    padding: 10px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    transition: background-color 0.2s ease;
+}
+
+.notification-container:last-child {
+    margin-bottom: 0;
+}
+
+.notification-content {
+    flex-grow: 1;
+}
+
+.notification-content p {
+    margin: 0 0 5px 0;
+    color: #212529;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.notification-content small {
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+.notification-container.read {
+    background-color: #f8f9fa;
+}
+
+.notification-container.read .notification-content p {
+    color: #6c757d;
+}
+
+.notification-container.unread {
+    background-color: #fff;
+    border-left: 3px solid #007bff;
+}
+
+.mark-read-btn {
+    background-color: #e9ecef;
+    color: #495057;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mark-read-btn:hover {
+    background-color: #dee2e6;
+    color: #212529;
+}
+
+#notifications-container > button {
+    width: 100%;
+    padding: 8px;
+    margin-top: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#notifications-container > button:hover {
+    background-color: #0056b3;
+}
+
+/* Custom Scrollbar for Notifications List */
+#notifications-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+#notifications-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#notifications-list::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+#notifications-list::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+.notification-buttons {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    display: flex;
+    gap: 2px;
+}
+
+.mark-read-btn,
+.mark-unread-btn {
+    padding: 0 2px;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 6px;
+    transition: all 0.2s ease;
+    min-width: 30px;
+    height: 10px;
+    line-height: 10px;
+}
+
+.mark-read-btn {
+    background-color: #e0e0e0;
+    color: #333;
+}
+
+.mark-unread-btn {
+    background-color: #f0f0f0;
+    color: #666;
+}
+
+.mark-read-btn:hover {
+    background-color: #28a745;
+    color: white;
+}
+
+.mark-unread-btn:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.notification-content small {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.75rem;
+}
+
+.notification-buttons {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    display: flex;
+    gap: 2px;
+}
+
+.notification-container {
+    position: relative;
+    padding: 10px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    transition: background-color 0.2s ease;
+}
+
