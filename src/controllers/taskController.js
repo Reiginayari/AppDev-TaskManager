@@ -4,7 +4,7 @@ const { getIO } = require('../config/socket');
 
 exports.getAllTasks = async (req, res) => {
     try {
-        const { priority, dueDate } = req.query;
+        const { priority, dueDate, search } = req.query;
         
         const filter = {
             $or: [
@@ -13,8 +13,17 @@ exports.getAllTasks = async (req, res) => {
             ]
         };
 
+        if (search) {
+            filter.$and = [{
+                $or: [
+                    { title: { $regex: search, $options: 'i' } },
+                    { description: { $regex: search, $options: 'i' } }
+                ]
+            }];
+        }
+
         if (priority && priority !== 'all') {
-            filter.priority = priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase();
+            filter.priority = priority.toLowerCase();
         }
 
         if (dueDate) {
@@ -42,20 +51,24 @@ exports.getAllTasks = async (req, res) => {
 
         const dueToday = [];
         const upcoming = {};
-        const byPriority = { High: [], Medium: [], Low: [] };
+        const byPriority = { high: [], medium: [], low: [] };
 
         // If priority filter is active, only show tasks in byPriority
         if (priority && priority !== 'all') {
             tasks.forEach(task => {
-                if (task.priority === filter.priority) {
-                    byPriority[task.priority].push(task);
+                if (task.priority === priority.toLowerCase()) {
+                    byPriority[priority.toLowerCase()].push(task);
                 }
             });
 
             return res.json({
                 dueToday: [],
                 upcoming: {},
-                byPriority
+                byPriority: {
+                    High: byPriority.high,
+                    Medium: byPriority.medium,
+                    Low: byPriority.low
+                }
             });
         }
 
@@ -75,16 +88,18 @@ exports.getAllTasks = async (req, res) => {
                 }
             }
 
-            const taskPriority = task.priority || 'Low';
-            if (byPriority[taskPriority]) {
-                byPriority[taskPriority].push(task);
-            }
+            const taskPriority = task.priority.toLowerCase();
+            byPriority[taskPriority].push(task);
         });
 
         res.json({
             dueToday,
             upcoming,
-            byPriority
+            byPriority: {
+                High: byPriority.high,
+                Medium: byPriority.medium,
+                Low: byPriority.low
+            }
         });
     } catch (error) {
         console.error('Error in getAllTasks:', error);

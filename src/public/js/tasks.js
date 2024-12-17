@@ -30,6 +30,17 @@ document.addEventListener('DOMContentLoaded', () => {
             container.classList.remove('show');
         }
     });
+
+    // Add search input handler
+    const searchInput = document.getElementById('task-search');
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            loadTasks();
+        }, 300);
+    });
 });
 
 function displayUserName() {
@@ -245,16 +256,19 @@ async function loadTasks() {
     const token = localStorage.getItem('token');
     const priorityFilter = document.getElementById('filter-priority').value;
     const dateFilter = document.getElementById('filter-date').value;
+    const searchTerm = document.getElementById('task-search').value.trim();
 
     try {
-        let url = '/api/tasks?';
         const params = new URLSearchParams();
         
         if (priorityFilter && priorityFilter !== 'all') {
-            params.append('priority', priorityFilter.charAt(0).toUpperCase() + priorityFilter.slice(1));
+            params.append('priority', priorityFilter);
         }
         if (dateFilter) {
             params.append('dueDate', dateFilter);
+        }
+        if (searchTerm) {
+            params.append('search', searchTerm);
         }
 
         const response = await fetch(`/api/tasks?${params.toString()}`, {
@@ -285,30 +299,32 @@ function displayTasks(taskData) {
         return;
     }
 
-    // Display Due Today tasks
-    if (taskData.dueToday && taskData.dueToday.length > 0) {
-        taskList.innerHTML += `<h2 class="task-group-header">Due Today</h2>`;
-        taskData.dueToday.forEach(task => {
-            const taskElement = createTaskElement(task);
-            taskList.appendChild(taskElement);
-        });
-    }
-
-    // Display Upcoming tasks
-    if (taskData.upcoming) {
-        Object.keys(taskData.upcoming).sort((a, b) => new Date(a) - new Date(b)).forEach(date => {
-            taskList.innerHTML += `<h2 class="task-group-header">Upcoming: ${date}</h2>`;
-            taskData.upcoming[date].forEach(task => {
+    // Display Due Today tasks if not filtering by priority
+    if (!document.getElementById('filter-priority').value || document.getElementById('filter-priority').value === 'all') {
+        if (taskData.dueToday && taskData.dueToday.length > 0) {
+            taskList.innerHTML += `<h2 class="task-group-header">Due Today</h2>`;
+            taskData.dueToday.forEach(task => {
                 const taskElement = createTaskElement(task);
                 taskList.appendChild(taskElement);
             });
-        });
+        }
+
+        // Display Upcoming tasks
+        if (taskData.upcoming && Object.keys(taskData.upcoming).length > 0) {
+            Object.keys(taskData.upcoming).sort((a, b) => new Date(a) - new Date(b)).forEach(date => {
+                taskList.innerHTML += `<h2 class="task-group-header">Upcoming: ${date}</h2>`;
+                taskData.upcoming[date].forEach(task => {
+                    const taskElement = createTaskElement(task);
+                    taskList.appendChild(taskElement);
+                });
+            });
+        }
     }
 
     // Display tasks by Priority
     if (taskData.byPriority) {
-        taskList.innerHTML += `<h2 class="task-group-header">By Priority</h2>`;
-        ['High', 'Medium', 'Low'].forEach(priority => {
+        const priorities = ['High', 'Medium', 'Low'];
+        priorities.forEach(priority => {
             if (taskData.byPriority[priority] && taskData.byPriority[priority].length > 0) {
                 taskList.innerHTML += `<h3 class="priority-group-header">${priority} Priority</h3>`;
                 taskData.byPriority[priority].forEach(task => {
@@ -317,6 +333,10 @@ function displayTasks(taskData) {
                 });
             }
         });
+    }
+
+    if (taskList.innerHTML === '') {
+        taskList.innerHTML = '<p>No tasks found matching the current filters.</p>';
     }
 }
 
