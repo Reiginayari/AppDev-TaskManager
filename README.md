@@ -1,6 +1,6 @@
-# AppDev Task Manager
+# TaskMan
 
-AppDev Task Manager is a web application designed to help users manage tasks efficiently. It allows users to create, update, and delete tasks, as well as manage co-taskers.
+TaskMan is a web application designed to help users manage tasks efficiently. It allows users to create, update, and delete tasks, as well as manage co-taskers.
 
 ## Members
 - Reigina  Mascariñas
